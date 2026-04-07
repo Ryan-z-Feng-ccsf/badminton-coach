@@ -120,7 +120,7 @@ pip install -r requirements.txt
 Copy the environment template and add your LLM API key:
 
 ```
-cp .env.example .env
+cp .env
 # Open .env and insert your OPENAI_API_KEY or GEMINI_API_KEY
 ```
 
