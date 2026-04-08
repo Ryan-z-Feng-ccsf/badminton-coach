@@ -3,6 +3,34 @@ from biomechanics import calculate_3d_angle, calculate_joint_velocity
 
 import numpy as np
 
+"""
+input:
+pose_data_payload = {
+    0: {
+        "right_shoulder": [0.51, 0.50, 0.50], # [x, y, z]
+        "right_elbow": [0.60, 0.35, 0.45],
+        "right_wrist": [0.65, 0.30, 0.50]
+    },
+    1: {
+        "right_shoulder": [0.52, 0.50, 0.50],
+        "right_elbow": [0.65, 0.20, 0.55],
+        "right_wrist": [0.75, 0.05, 0.60]
+    },
+    # ... 后续的 2, 3, 4 帧
+}
+output:
+{
+    "safety_report": {
+        "elbow_hyperextension": {"is_safe": true, "max_angle": 165.2},
+        "shoulder_impingement": {"is_safe": false, "max_angle": 110.5}
+    },
+    "technique_report": {
+        "kinetic_chain": {"is_proper": true, "message": "Perfect whip effect"},
+        "impact_point": {"is_optimal": true, "height": 2.8}
+    }
+}
+"""
+
 
 class SafetyRulesLayer:
     """Layer 1: Universal Safety Rules"""
@@ -11,52 +39,52 @@ class SafetyRulesLayer:
         self.ELBOW_ANGLE_THRESHOLD = 175.0  # Example threshold for elbow angle
         self.SHOULDER_ANGLE_THRESHOLD = 100.0  # Example threshold for shoulder angle
 
-    def check_elbow_hyperextension(self, elbow_angle: float) -> Dict[str, Any]:
+    def check_elbow_hyperextension(self, elbow_angle_max: float) -> Dict[str, Any]:
         """
         Check if the elbow angle exceeds the hyperextension threshold.
         param elbow_angle: The calculated angle of the elbow joint in degrees
         return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
         """
-        if elbow_angle > self.ELBOW_ANGLE_THRESHOLD:
+        if elbow_angle_max > self.ELBOW_ANGLE_THRESHOLD:
             return {
-                "issue": "Elbow Hyperextension",
+                "issue": "Elbow Hyperextension Risk",
                 "is_safe": False,
-                "details": f"Elbow angle of {elbow_angle:.2f}°.",
-                "threshold": self.ELBOW_ANGLE_THRESHOLD
+                "max_elbow_angle": elbow_angle_max
             }
-        if np.isnan(elbow_angle):
+        if np.isnan(elbow_angle_max):
             return {
                 "issue": "Joint overlap, unable to calculate elbow angle",
+                "is_safe": False,
+                "max_elbow_angle": None
             }
         return {
             "issue": "Elbow angle is within safe limits",
             "is_safe": True,
-            "details": f"Elbow angle of {elbow_angle:.2f}°.",
-            "threshold": self.ELBOW_ANGLE_THRESHOLD
+            "max_elbow_angle": elbow_angle_max
         }
 
-    def check_shoulder_impingement(self, shoulder_angle: float) -> Dict[str, Any]:
+    def check_shoulder_impingement(self, shoulder_angle_max: float) -> Dict[str, Any]:
         """
         Check if the shoulder angle exceeds the impingement risk threshold.
         param shoulder_angle: The calculated angle of the shoulder joint in degrees
         return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
         """
-        if shoulder_angle > self.SHOULDER_ANGLE_THRESHOLD:
+        if shoulder_angle_max > self.SHOULDER_ANGLE_THRESHOLD:
             return {
                 "issue": "Shoulder Impingement Risk",
                 "is_safe": False,
-                "details": f"Shoulder angle of {shoulder_angle:.2f}°.",
-                "threshold": self.SHOULDER_ANGLE_THRESHOLD
+                "max_shoulder_angle": shoulder_angle_max
             }
-        if np.isnan(shoulder_angle):
+        if np.isnan(shoulder_angle_max):
             return {
                 "issue": "Joint overlap, unable to calculate shoulder angle",
+                "is_safe": False,
+                "max_shoulder_angle": None
             }
         return {
             "issue": "Shoulder angle is within safe limits",
             "is_safe": True,
-            "details": f"Shoulder angle of {shoulder_angle:.2f}°.",
-            "threshold": self.SHOULDER_ANGLE_THRESHOLD
+            "max_shoulder_angle": shoulder_angle_max
         }
 
 
@@ -80,7 +108,9 @@ class TechniqueRulesLayer:
             return {
                 "issue": "Insufficient data to evaluate kinetic chain",
                 "is_proper": False,
-                "details": "No velocity data provided for shoulder, elbow, or wrist."
+                "idx_shoulder_peak": None,
+                "idx_elbow_peak": None,
+                "idx_wrist_peak": None
             }
         shoulder_velocity_nd_array = np.asarray(shoulder_velocity)
         elbow_velocity_nd_array = np.asarray(elbow_velocity)
@@ -172,36 +202,43 @@ class DiagnosisEngine:
         right_elbow = []
         right_wrist = []
         right_hip = []
-        report: Dict[int, Any] = {}
-        for frame in pose_data.keys():
+        report: Dict[str, Any] = {}
+        for frame in sorted(pose_data.keys()):
             right_shoulder.append(extract_body_part(frame, pose_data, "right_shoulder"))
             right_elbow.append(extract_body_part(frame, pose_data, "right_elbow"))
             right_wrist.append(extract_body_part(frame, pose_data, "right_wrist"))
             right_hip.append(extract_body_part(frame, pose_data, "right_hip"))
 
+        right_shoulder_angle = []
+        right_elbow_angle = []
+
         # Calculate angles and velocities
-        for frame in pose_data.keys():  # calculate angles for each frame and apply safety rules
-            right_elbow_angle = calculate_3d_angle(right_shoulder, right_elbow, right_wrist)
-            right_shoulder_angle = calculate_3d_angle(right_shoulder, right_elbow, right_wrist)
-            elbow_hyperextension_result = self.safety_rules_layer.check_elbow_hyperextension(right_elbow_angle)
-            shoulder_impingement_result = self.safety_rules_layer.check_shoulder_impingement(right_shoulder_angle)
-            report[frame] = {
-                frame: {
-                    "right_elbow_report": elbow_hyperextension_result,
-                    "right_shoulder_report": shoulder_impingement_result,
-                }
-            }
+        for frame in sorted(pose_data.keys()):  # calculate angles for each frame and apply safety rules
+            right_elbow_angle.append(calculate_3d_angle(right_shoulder[frame], right_elbow[frame], right_wrist[frame]))
+            right_shoulder_angle.append(
+                calculate_3d_angle(right_elbow[frame], right_shoulder[frame], right_hip[frame]))
+
+        elbow_hyperextension_result = self.safety_rules_layer.check_elbow_hyperextension(max(right_elbow_angle))
+        shoulder_impingement_result = self.safety_rules_layer.check_shoulder_impingement(max(right_shoulder_angle))
+        report["safety_report"] = {
+            "elbow_hyperextension": elbow_hyperextension_result,
+            "shoulder_impingement": shoulder_impingement_result
+        }
+
+        right_shoulder_velocity = []
+        right_elbow_velocity = []
+        right_wrist_velocity = []
         for frame in range(len(right_shoulder) - 1):  # calculate velocities for each frame and apply technique rules
-            right_shoulder_velocity = calculate_joint_velocity(frame, right_shoulder)
-            right_elbow_velocity = calculate_joint_velocity(frame, right_elbow)
-            right_wrist_velocity = calculate_joint_velocity(frame, right_wrist)
-            kinetic_chain_result = self.technique_rules_layer.check_kinetic_chain(right_shoulder_velocity,
-                                                                                  right_elbow_velocity,
-                                                                                  right_wrist_velocity)
-            report[frame]["kinetic_chain_report"] = kinetic_chain_result
+            right_shoulder_velocity.append(calculate_joint_velocity(frame, right_shoulder))
+            right_elbow_velocity.append(calculate_joint_velocity(frame, right_elbow))
+            right_wrist_velocity.append(calculate_joint_velocity(frame, right_wrist))
 
         if self.technique_rules_layer.evaluate_impact_point(impact_height):
-            report["impact_point_report"] = self.technique_rules_layer.evaluate_impact_point(impact_height)
+            report["technique_report"] = {
+                "kinetic_chain": self.technique_rules_layer.check_kinetic_chain(right_shoulder_velocity,
+                                                                                right_elbow_velocity,
+                                                                                right_wrist_velocity),
+                "impact_point": self.technique_rules_layer.evaluate_impact_point(impact_height)}
         return report
 
 

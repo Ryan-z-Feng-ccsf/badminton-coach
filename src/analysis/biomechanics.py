@@ -1,14 +1,16 @@
 import numpy as np
 
 
-def calculate_3d_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
+def calculate_3d_angle(a: list[float], b: list[float], c: list[float]) -> float:
     """
     param a: 3D coordinates of the first point (np.array)
     param b: 3D coordinates of the second point (np.array)
     param c: 3D coordinates of the third point (np.array)
     return: angle in degrees between the vectors AB and bc
     """
-
+    a = np.array(a)
+    b = np.array(b)
+    c = np.array(c)
     # Create vectors AB and bc
     ab = a - b
     bc = c - b
@@ -44,12 +46,12 @@ def calculate_joint_velocity(i: int, joint: list[np.ndarray]) -> float:
     shoulder_velocity = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
     return shoulder_velocity
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # Example usage
-    a = np.array([1, 0, 0])
-    b = np.array([0, 0, 0])
-    c = np.array([0, 1, 0])
+    a = [1, 0, 0]
+    b = [0, 0, 0]
+    c = [0, 1, 0]
     angle = calculate_3d_angle(a, b, c)
     print(f"Angle between AB and BC: {angle} degrees")
 

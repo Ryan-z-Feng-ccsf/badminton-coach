@@ -1,5 +1,5 @@
 .venv
 .idea
 mediapipe_pose_landmark.png
-__pyacache__
+__pyacache__/
 *.pyc
