@@ -19,16 +19,21 @@ pose_data_payload = {
     # ... 后续的 2, 3, 4 帧
 }
 output:
+{'safety_report': 
 {
-    "safety_report": {
-        "elbow_hyperextension": {"is_safe": true, "max_angle": 165.2},
-        "shoulder_impingement": {"is_safe": false, "max_angle": 110.5}
-    },
-    "technique_report": {
-        "kinetic_chain": {"is_proper": true, "message": "Perfect whip effect"},
-        "impact_point": {"is_optimal": true, "height": 2.8}
-    }
+'elbow_hyperextension': 
+{'issue': 'Elbow angle is within safe limits', 'is_safe': True, 'max_elbow_angle': 167.8816167125607}, 
+'shoulder_impingement': 
+{'issue': 'Shoulder Impingement Risk', 'is_safe': False, 'max_shoulder_angle': 155.09551895544325}
+}, 
+'technique_report': 
+{
+'kinetic_chain': 
+{'issue': 'Kinetic chain is not functioning properly', 'is_proper': False, 'idx_shoulder_peak': 0, 'idx_elbow_peak': 1, 'idx_wrist_peak': 0}, 
+'impact_point': {'issue': 'Arm fully locked at impact, high risk of injury', 'is_optimal': True, 'impact_height': 2.5, 'threshold': 0.8}
 }
+}
+
 """
 
 
@@ -94,6 +99,13 @@ class TechniqueRulesLayer:
     def __init__(self, length_wrist: float, length_elbow: float, length_shoulder: float, impact: bool = False):
         self.HITTING_HEIGHT_THRESHOLD = length_shoulder + length_elbow + length_wrist  # Example threshold for hitting height in meters
         self.IMPACT = impact  # Flag to indicate if the impact point has been evaluated
+        # Set up rules for evaluating the impact point, such as optimal height range.
+        # format: (min_ratio, max_ratio, is_optimal, message)
+        self.IMPACT_RULES = [
+            (0.0, 0.80, False, "Impact point is too low, likely hitting the net or causing a weak shot"),
+            (0.80, 0.95, True, "Impact point is optimal, allowing for good power and control"),
+            (0.95, float('inf'), False, "Arm fully locked at impact, high risk of injury")
+        ]
 
     def check_kinetic_chain(self, shoulder_velocity: list[float], elbow_velocity: list[float],
                             wrist_velocity: list[float]) -> Dict[str, Any]:
@@ -142,20 +154,29 @@ class TechniqueRulesLayer:
         param impact_height: The height of the impact point in meters
         return: A dictionary containing the diagnosis result, including whether the impact point is optimal and any relevant details.
         """
-        if impact_height >= self.HITTING_HEIGHT_THRESHOLD and self.IMPACT:
+        if not self.IMPACT:
             return {
-                "issue": "Impact point is too high",
-                "is_optimal": False,
-                "detail": impact_height,
+                "issue": "Impact point evaluation not performed",
+                "is_optimal": None,
+                "impact_height": impact_height,
                 "threshold": self.HITTING_HEIGHT_THRESHOLD
             }
-        else:
-            return {
-                "issue": "Impact point is optimal",
-                "is_optimal": True,
-                "detail": impact_height,
-                "threshold": self.HITTING_HEIGHT_THRESHOLD
-            }
+
+        impact_ratio = impact_height / self.HITTING_HEIGHT_THRESHOLD
+        for min_ratio, max_ratio, is_optimal, message in self.IMPACT_RULES:
+            if min_ratio <= impact_ratio < max_ratio:
+                return {
+                    "issue": message,
+                    "is_optimal": is_optimal,
+                    "impact_height": impact_height,
+                    "threshold": self.HITTING_HEIGHT_THRESHOLD
+                }
+        return {
+            "issue": "Impact point evaluation failed, height ratio out of expected range",
+            "is_optimal": None,
+            "impact_height": impact_height,
+            "threshold": self.HITTING_HEIGHT_THRESHOLD
+        }
 
 
 def extract_body_part(frame: int, pose_data: dict[int:dict[str:dict[str:int]]], body_part: str) -> list[Any]:
@@ -202,7 +223,7 @@ class DiagnosisEngine:
         right_elbow = []
         right_wrist = []
         right_hip = []
-        report: Dict[str, Any] = {}
+        report_result: Dict[str, Any] = {}
         for frame in sorted(pose_data.keys()):
             right_shoulder.append(extract_body_part(frame, pose_data, "right_shoulder"))
             right_elbow.append(extract_body_part(frame, pose_data, "right_elbow"))
@@ -220,7 +241,7 @@ class DiagnosisEngine:
 
         elbow_hyperextension_result = self.safety_rules_layer.check_elbow_hyperextension(max(right_elbow_angle))
         shoulder_impingement_result = self.safety_rules_layer.check_shoulder_impingement(max(right_shoulder_angle))
-        report["safety_report"] = {
+        report_result["safety_report"] = {
             "elbow_hyperextension": elbow_hyperextension_result,
             "shoulder_impingement": shoulder_impingement_result
         }
@@ -234,12 +255,12 @@ class DiagnosisEngine:
             right_wrist_velocity.append(calculate_joint_velocity(frame, right_wrist))
 
         if self.technique_rules_layer.evaluate_impact_point(impact_height):
-            report["technique_report"] = {
+            report_result["technique_report"] = {
                 "kinetic_chain": self.technique_rules_layer.check_kinetic_chain(right_shoulder_velocity,
                                                                                 right_elbow_velocity,
                                                                                 right_wrist_velocity),
                 "impact_point": self.technique_rules_layer.evaluate_impact_point(impact_height)}
-        return report
+        return report_result
 
 
 if __name__ == "__main__":
