@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from biomechanics import calculate_3d_angle
+from biomechanics import calculate_3d_angle, calculate_joint_velocity
 
 import numpy as np
 
@@ -63,8 +63,9 @@ class SafetyRulesLayer:
 class TechniqueRulesLayer:
     """Layer 2: Technique-Specific Rules"""
 
-    def __init__(self, length_wrist: float, length_elbow: float, length_shoulder: float):
+    def __init__(self, length_wrist: float, length_elbow: float, length_shoulder: float, impact: bool = False):
         self.HITTING_HEIGHT_THRESHOLD = length_shoulder + length_elbow + length_wrist  # Example threshold for hitting height in meters
+        self.IMPACT = impact  # Flag to indicate if the impact point has been evaluated
 
     def check_kinetic_chain(self, shoulder_velocity: list[float], elbow_velocity: list[float],
                             wrist_velocity: list[float]) -> Dict[str, Any]:
@@ -111,7 +112,7 @@ class TechniqueRulesLayer:
         param impact_height: The height of the impact point in meters
         return: A dictionary containing the diagnosis result, including whether the impact point is optimal and any relevant details.
         """
-        if impact_height >= self.HITTING_HEIGHT_THRESHOLD:
+        if impact_height >= self.HITTING_HEIGHT_THRESHOLD and self.IMPACT:
             return {
                 "issue": "Impact point is too high",
                 "is_optimal": False,
@@ -127,17 +128,106 @@ class TechniqueRulesLayer:
             }
 
 
+def extract_body_part(frame: int, pose_data: dict[int:dict[str:dict[str:int]]], body_part: str) -> list[Any]:
+    """
+    Extract the 3D coordinates of a specific body part from the pose data for a given frame.
+    param frame: The index of the frame to extract data from
+    param pose_data: The pose data containing 3D coordinates for each body part across frames
+    param body_part: The name of the body part to extract (e.g., "right
+_shoulder", "right_elbow", "right_wrist", "right_hip")
+    """
+    return [pose_data[frame][body_part]["x"], pose_data[frame][body_part]["y"], pose_data[frame][body_part]["z"]]
+
+
 class DiagnosisEngine:
     """Layer 3: Main Diagnosis Engine"""
 
-    def __init__(self, length_arm: float):
+    def __init__(self, length_shoulder: float, length_elbow: float, length_wrist: float):
         self.safety_rules_layer = SafetyRulesLayer()
-        self.technique_rules_layer = TechniqueRulesLayer(length_arm)
+        self.technique_rules_layer = TechniqueRulesLayer(length_shoulder, length_elbow, length_wrist, impact=True)
 
-    def analyze_stroke(self, pose_data: dict[int:dict[str:dict[str:int]]]) -> Dict[str, Any]:
+    def analyze_stroke(self, pose_data: dict[int:dict[str:dict[str:int]]], impact_height: float) -> Dict[str, Any]:
         """
+        pose_data: {
+            0: {
+                "right_shoulder": {"x": 0.5, "y": 0.5, "z": 0.5},
+                "right_elbow": {"x": 0.5, "y": 0.5, "z": 0.5},
+                "right_wrist": {"x": 0.5, "y": 0.5, "z": 0.5},
+                ...
+                },
+            1: {
+                "right_shoulder": {"x": 0.5, "y": 0.5, "z": 0.5},
+                "right_elbow": {"x": 0.5, "y": 0.5, "z": 0.5},
+                "right_wrist": {"x": 0.5, "y": 0.5, "z": 0.5},
+                ...
+                },
+            ...
+        }
         Entry point to process pose data, extract features, apply rules, and return JSON report.
         param pose_data: A list of 3D coordinates representing the pose data for the stroke.
         return: A dictionary containing the diagnosis report, including safety and technique assessments.
         """
         # Extract relevant features from pose data
+        right_shoulder = []
+        right_elbow = []
+        right_wrist = []
+        right_hip = []
+        report: Dict[int, Any] = {}
+        for frame in pose_data.keys():
+            right_shoulder.append(extract_body_part(frame, pose_data, "right_shoulder"))
+            right_elbow.append(extract_body_part(frame, pose_data, "right_elbow"))
+            right_wrist.append(extract_body_part(frame, pose_data, "right_wrist"))
+            right_hip.append(extract_body_part(frame, pose_data, "right_hip"))
+
+        # Calculate angles and velocities
+        for frame in pose_data.keys():  # calculate angles for each frame and apply safety rules
+            right_elbow_angle = calculate_3d_angle(right_shoulder, right_elbow, right_wrist)
+            right_shoulder_angle = calculate_3d_angle(right_shoulder, right_elbow, right_wrist)
+            elbow_hyperextension_result = self.safety_rules_layer.check_elbow_hyperextension(right_elbow_angle)
+            shoulder_impingement_result = self.safety_rules_layer.check_shoulder_impingement(right_shoulder_angle)
+            report[frame] = {
+                frame: {
+                    "right_elbow_report": elbow_hyperextension_result,
+                    "right_shoulder_report": shoulder_impingement_result,
+                }
+            }
+        for frame in range(len(right_shoulder) - 1):  # calculate velocities for each frame and apply technique rules
+            right_shoulder_velocity = calculate_joint_velocity(frame, right_shoulder)
+            right_elbow_velocity = calculate_joint_velocity(frame, right_elbow)
+            right_wrist_velocity = calculate_joint_velocity(frame, right_wrist)
+            kinetic_chain_result = self.technique_rules_layer.check_kinetic_chain(right_shoulder_velocity,
+                                                                                  right_elbow_velocity,
+                                                                                  right_wrist_velocity)
+            report[frame]["kinetic_chain_report"] = kinetic_chain_result
+
+        if self.technique_rules_layer.evaluate_impact_point(impact_height):
+            report["impact_point_report"] = self.technique_rules_layer.evaluate_impact_point(impact_height)
+        return report
+
+
+if __name__ == "__main__":
+    # Example usage
+    pose_data_example = {
+        0: {  # 第0帧：引拍阶段（手臂弯曲）
+            "right_shoulder": {"x": 0.5, "y": 0.5, "z": 0.5},
+            "right_elbow": {"x": 0.55, "y": 0.45, "z": 0.4},
+            "right_wrist": {"x": 0.52, "y": 0.55, "z": 0.3},
+            "right_hip": {"x": 0.5, "y": 0.8, "z": 0.5},
+        },
+        1: {  # 第1帧：挥拍中阶段（手臂开始甩出，速度增加）
+            "right_shoulder": {"x": 0.51, "y": 0.5, "z": 0.5},  # 肩膀相对固定
+            "right_elbow": {"x": 0.6, "y": 0.35, "z": 0.45},
+            "right_wrist": {"x": 0.65, "y": 0.3, "z": 0.5},
+            "right_hip": {"x": 0.51, "y": 0.8, "z": 0.5},
+        },
+        2: {  # 第2帧：击球瞬间（手臂完全伸直，速度达到巅峰，且手腕超过肘部）
+            "right_shoulder": {"x": 0.52, "y": 0.5, "z": 0.5},
+            "right_elbow": {"x": 0.65, "y": 0.2, "z": 0.55},
+            "right_wrist": {"x": 0.75, "y": 0.05, "z": 0.6},  # 手腕y最小（最高），x最大（甩得最远）
+            "right_hip": {"x": 0.52, "y": 0.8, "z": 0.5},
+        }
+    }
+    impact_height_example = 2.5
+    diagnosis_engine = DiagnosisEngine(length_shoulder=0.3, length_elbow=0.3, length_wrist=0.2)
+    report = diagnosis_engine.analyze_stroke(pose_data_example, impact_height_example)
+    print(report)
