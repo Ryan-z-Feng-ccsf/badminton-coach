@@ -5,7 +5,11 @@ import numpy as np
 
 """
 input:
-pose_data_payload = {
+metadata=
+{
+fps=?
+
+{pose_data_payload = {
     0: {
         "right_shoulder": [0.51, 0.50, 0.50], # [x, y, z]
         "right_elbow": [0.60, 0.35, 0.45],
@@ -17,7 +21,7 @@ pose_data_payload = {
         "right_wrist": [0.75, 0.05, 0.60]
     },
     # ... 后续的 2, 3, 4 帧
-}
+}}}
 output:
 {'safety_report': 
 {
@@ -96,7 +100,8 @@ class SafetyRulesLayer:
 class TechniqueRulesLayer:
     """Layer 2: Technique-Specific Rules"""
 
-    def __init__(self, length_wrist: float, length_elbow: float, length_shoulder: float, impact: bool = False):
+    def __init__(self, length_wrist: float, length_elbow: float, length_shoulder: float, fps: float,
+                 impact: bool = False, lock_seconds: float = 0.4):
         self.HITTING_HEIGHT_THRESHOLD = length_shoulder + length_elbow + length_wrist  # Example threshold for hitting height in meters
         self.IMPACT = impact  # Flag to indicate if the impact point has been evaluated
         # Set up rules for evaluating the impact point, such as optimal height range.
@@ -106,17 +111,20 @@ class TechniqueRulesLayer:
             (0.80, 0.95, True, "Impact point is optimal, allowing for good power and control"),
             (0.95, float('inf'), False, "Arm fully locked at impact, high risk of injury")
         ]
+        self.window_frame = int(round(fps * lock_seconds))
 
-    def check_kinetic_chain(self, shoulder_velocity: list[float], elbow_velocity: list[float],
-                            wrist_velocity: list[float]) -> Dict[str, Any]:
+    def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
+                            smoothed_right_elbow_velocity: list[float],
+                            smoothed_right_wrist_velocity: list[float], impact_frame: float) -> Dict[str, Any]:
         """
         check the kinetic chain sequence
-        param shoulder_velocity: The velocity of the shoulder joint in m/s
-        param elbow_velocity: The velocity of the elbow joint in m/s
-        param wrist_velocity: The velocity of the wrist joint in m/s
+        param shoulder_velocity: The smoothed velocity of the shoulder joint in m/s
+        param elbow_velocity: The smoothed velocity of the elbow joint in m/s
+        param wrist_velocity: The smoothed velocity of the wrist joint in m/s
+        param impact_frame: The index of the frame where the impact occurs, used to focus the kinetic chain analysis around this point
         return: A dictionary containing the diagnosis result, including whether the kinetic chain is functioning properly and any relevant details.
         """
-        if not shoulder_velocity or not elbow_velocity or not wrist_velocity:
+        if not smoothed_right_shoulder_velocity or not smoothed_right_elbow_velocity or not smoothed_right_wrist_velocity:
             return {
                 "issue": "Insufficient data to evaluate kinetic chain",
                 "is_proper": False,
@@ -124,14 +132,29 @@ class TechniqueRulesLayer:
                 "idx_elbow_peak": None,
                 "idx_wrist_peak": None
             }
-        shoulder_velocity_nd_array = np.asarray(shoulder_velocity)
-        elbow_velocity_nd_array = np.asarray(elbow_velocity)
-        wrist_velocity_nd_array = np.asarray(wrist_velocity)
+        # if impact_frame is less than the window frame, we can only analyze from the start of the data to the impact frame
+        start_frame = max(0, int(impact_frame) - int(self.window_frame))  # Analyze a window of frames leading up to the impact frame to check the sequence of velocity peaks
+        end_frame = impact_frame + 1
+        shoulder_slice = np.asarray(smoothed_right_shoulder_velocity[start_frame:end_frame])
+        elbow_slice = np.asarray(smoothed_right_elbow_velocity[start_frame:end_frame])
+        wrist_slice = np.asarray(smoothed_right_wrist_velocity[start_frame:end_frame])
+        # if shoulder or elbow or wrist velocity data is empty in the analyzed window, return insufficient data
+        if len(shoulder_slice) == 0 or len(elbow_slice) == 0 or len(wrist_slice) == 0:
+            return {
+                "issue": "Velocity slices are empty, check impact_frame validity",
+                "is_proper": False,
+                "idx_shoulder_peak": None,
+                "idx_elbow_peak": None,
+                "idx_wrist_peak": None
+            }
         idx_shoulder_peak = int(
-            np.argmax(shoulder_velocity_nd_array))  # Find the index of the peak velocity for the shoulder
-        idx_elbow_peak = int(np.argmax(elbow_velocity_nd_array))  # Find the index of the peak velocity for the elbow
-        idx_wrist_peak = int(np.argmax(wrist_velocity_nd_array))  # Find the index of the peak velocity for the wrist
-        if idx_shoulder_peak < idx_elbow_peak < idx_wrist_peak:
+            np.argmax(
+                shoulder_slice)) + start_frame  # Find the index of the peak velocity for the shoulder, and adjust it to the original frame index by adding start_frame
+        idx_elbow_peak = int(
+            np.argmax(elbow_slice)) + start_frame  # Find the index of the peak velocity for the elbow
+        idx_wrist_peak = int(
+            np.argmax(wrist_slice)) + start_frame  # Find the index of the peak velocity for the wrist
+        if idx_shoulder_peak <= idx_elbow_peak <= idx_wrist_peak:
             return {
                 "issue": "Kinetic chain is functioning properly",
                 "is_proper": True,
