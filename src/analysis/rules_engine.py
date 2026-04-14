@@ -12,7 +12,8 @@ smoothed_right_wrist_velocity=[...], # list of smoothed wrist velocities across 
 impact_height=?
 length_elbow=?
 length_wrist=?
-right_
+right_elbow_angle=[...], # list of calculated elbow angles across frames
+right_shoulder_angle=[...], # list of calculated shoulder angles across frames
 }
 output:
 {'safety_report': 
@@ -92,9 +93,9 @@ class SafetyRulesLayer:
 class TechniqueRulesLayer:
     """Layer 2: Technique-Specific Rules"""
 
-    def __init__(self, length_wrist: float, length_elbow: float, fps: float, impact_frame: float, impact_height: float,
+    def __init__(self, impact_threshold: float, fps: float, impact_frame: float, impact_height: float,
                  lock_seconds: float = 0.4):
-        self.HITTING_HEIGHT_THRESHOLD = length_elbow + length_wrist  # Example threshold for hitting height in meters
+        self.HITTING_HEIGHT_THRESHOLD = impact_threshold  # Example threshold for hitting height in meters
         # Set up rules for evaluating the impact point, such as optimal height range.
         # format: (min_ratio, max_ratio, is_optimal, message)
         self.IMPACT_RULES = [
@@ -189,10 +190,10 @@ class TechniqueRulesLayer:
 class DiagnosisEngine:
     """Layer 3: Main Diagnosis Engine"""
 
-    def __init__(self, length_elbow: float, length_wrist: float,fps:float, impact_frame: float, impact_height: float,
+    def __init__(self, impact_threshold,fps:float, impact_frame: float, impact_height: float,
                  lock_seconds: float):
         self.safety_rules_layer = SafetyRulesLayer()
-        self.technique_rules_layer = TechniqueRulesLayer(length_wrist, length_elbow, fps, impact_frame, impact_height,
+        self.technique_rules_layer = TechniqueRulesLayer(impact_threshold, fps, impact_frame, impact_height,
                                                          lock_seconds)
 
     def analyze_stroke(self, smoothed_right_shoulder_velocity: list[float],

@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def calculate_3d_angle(a: list[float], b: list[float], c: list[float]) -> float:
     """
     param a: 3D coordinates of the first point (np.array)
