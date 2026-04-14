@@ -36,12 +36,13 @@ wrist_wrist_vel=
 
 
 class SensorFusion:
-    def __init__(self, tolerance: int = 2):
+    def __init__(self,fps:float, tolerance: int = 2):
+        self.fps = fps  # Frames per second of the video, used to convert between time and frame indices
         self.TOLERANCE = tolerance  # Number of frames within which to consider an audio peak and a visual peak as matching
         self.VIDEO_PATH = "../../data/raw_videos/test_clear_trim3.mp4"
         self.AUDIO_PATH = "../../data/audio/temp_audio.wav"
 
-    def detect_impact_multimodel(self, right_wrist_vel: list[float], fps: float) -> int:
+    def detect_impact_multimodel(self, right_wrist_vel: list[float]) -> int:
         """
         Detect the impact frame by cross-validating the detected audio peaks with the visual peaks from the wrist velocity data.
         Args:        right_wrist_vel (list[float]): A list of velocities for the right wrist joint across frames.
@@ -68,7 +69,7 @@ class SensorFusion:
         )
         audio_times_seconds = librosa.frames_to_time(audio_peaks_frames, sr=sr)
         print(fps)
-        audio_video_frames = [int(t * fps) for t in
+        audio_video_frames = [int(t * self.fps) for t in
                               audio_times_seconds]  # Convert audio peak times to corresponding video frame indices
         print("--------------")
         print(audio_video_frames)
@@ -114,8 +115,9 @@ class SensorFusion:
 
 
 if __name__ == "__main__":
+    fps=60.026353033038895
     # Example usage
-    sensor_fusion = SensorFusion()
+    sensor_fusion = SensorFusion(fps)
     # Simulated wrist velocity data (replace with actual data)
     right_wrist_vel = [0.03113222, 0.05088606, 0.05721603, 0.05963984, 0.06096867, 0.05939249,
                        0.05692969, 0.04784107, 0.04885278, 0.05403393, 0.06434244, 0.05712285,
@@ -138,6 +140,5 @@ if __name__ == "__main__":
                        0.00759137, 0.00790035, 0.00939222, 0.00897658, 0.0079522, 0.00719889,
                        0.00778767, 0.00812659, 0.00968052, 0.0103105, 0.01160244, 0.00974036,
                        0.00479871, 0.0025744]
-    fps = 60.026353033038895
-    impact_frame = sensor_fusion.detect_impact_multimodel(right_wrist_vel=right_wrist_vel, fps=fps)
+    impact_frame = sensor_fusion.detect_impact_multimodel(right_wrist_vel=right_wrist_vel)
     print(f"Detected impact frame: {impact_frame}")
