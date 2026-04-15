@@ -100,8 +100,8 @@ Converts the hard data into an empathetic, professional coaching experience. It 
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/your-username/badminton-coach-ai.git](https://github.com/your-username/badminton-coach-ai.git)
-cd badminton-coach-ai
+git clone [https://github.com/Ryan-z-Feng-ccsf/badminton-coach.git](https://github.com/Ryan-z-Feng-ccsf/badminton-coach.git)
+cd badminton-coach
 ```
 ### 2. Set Up the Environment
 It is recommended to use a virtual environment:
