@@ -25,7 +25,7 @@ right_elbow_angle : list[float]
 right_shoulder_angle : list[float]
 """
 import numpy as np
-from biomechanics import calculate_joint_velocity, calculate_3d_angle
+from .biomechanics import calculate_joint_velocity, calculate_3d_angle
 
 
 def extract_body_part(frame: int, pose_data: dict, joint_name: str) -> np.ndarray:
@@ -106,7 +106,7 @@ class AngleMetrics:
             b = extract_body_part(frame, pose_data, b_joint_name)
             c = extract_body_part(frame, pose_data, c_joint_name)
             angle = calculate_3d_angle(a, b, c)
-            angles.append(round(float(angle),3))
+            angles.append(angle)
         return angles
 
 
@@ -126,7 +126,7 @@ class VelocityMetrics:
         velocities: list = []
         for i in range(len(joint_positions) - 1):
             velocity = calculate_joint_velocity(i, joint_positions)
-            velocities.append(round(float(velocity),3))
+            velocities.append(velocity)
         return velocities
 
 

@@ -26,7 +26,7 @@ def calculate_3d_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
     angle = np.arccos(cos_angle)
     # Convert the angle to degrees
     angle_degrees = np.degrees(angle)
-    return angle_degrees
+    return round(float(angle_degrees),3)
 
 
 def calculate_joint_velocity(i: int, joint: list[np.ndarray]) -> float:
@@ -40,7 +40,7 @@ def calculate_joint_velocity(i: int, joint: list[np.ndarray]) -> float:
     dy = joint[i + 1][1] - joint[i][1]
     dz = joint[i + 1][2] - joint[i][2]
     joint_velocity = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-    return joint_velocity
+    return round(float(joint_velocity),3)
 
 
 if __name__ == "__main__":
