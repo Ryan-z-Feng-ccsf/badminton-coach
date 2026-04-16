@@ -23,7 +23,7 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-model_path = '../notebooks/pose_landmarker_heavy.task'
+model_path = '../models/pose_landmarker_heavy.task'
 base_options = python.BaseOptions(model_asset_path=model_path)
 options = vision.PoseLandmarkerOptions(
     base_options=base_options,
