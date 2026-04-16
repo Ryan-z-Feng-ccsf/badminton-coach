@@ -93,8 +93,11 @@ class SafetyRulesLayer:
 class TechniqueRulesLayer:
     """Layer 2: Technique-Specific Rules"""
 
-    def __init__(self, impact_threshold: float, fps: float, impact_frame: float, impact_height: float,
+    def __init__(self, impact_threshold: float, arm_extension_length: float, fps: float, impact_frame: float,
                  lock_seconds: float = 0.4):
+
+        # lock_seconds: the swing from start to finish
+
         self.HITTING_HEIGHT_THRESHOLD = impact_threshold  # Example threshold for hitting height in meters
         # Set up rules for evaluating the impact point, such as optimal height range.
         # format: (min_ratio, max_ratio, is_optimal, message)
@@ -105,7 +108,7 @@ class TechniqueRulesLayer:
         ]
         self.impact_frame = impact_frame
         self.window_frame = int(round(fps * lock_seconds))
-        self.impact_height = impact_height
+        self.impact_height = arm_extension_length
 
     def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
@@ -190,16 +193,14 @@ class TechniqueRulesLayer:
 class DiagnosisEngine:
     """Layer 3: Main Diagnosis Engine"""
 
-    def __init__(self, impact_threshold,fps:float, impact_frame: float, impact_height: float,
-                 lock_seconds: float):
+    def __init__(self, impact_threshold, arm_extension_length: float, fps:float,  impact_frame: float,):
         self.safety_rules_layer = SafetyRulesLayer()
-        self.technique_rules_layer = TechniqueRulesLayer(impact_threshold, fps, impact_frame, impact_height,
-                                                         lock_seconds)
+        self.technique_rules_layer = TechniqueRulesLayer(impact_threshold, arm_extension_length, fps, impact_frame)
 
     def analyze_stroke(self, smoothed_right_shoulder_velocity: list[float],
                        smoothed_right_elbow_velocity: list[float],
                        smoothed_right_wrist_velocity: list[float],
-                       right_elbow_angle: list[float], right_shoulder_angle: list[float],
+                       right_shoulder_angle: list[float], right_elbow_angle: list[float],
                        ) -> Dict[str, Any]:
         """
         smoothed_right_shoulder_velocity: A list of smoothed velocities for the right shoulder joint across frames
@@ -228,32 +229,4 @@ class DiagnosisEngine:
 
 
 if __name__ == "__main__":
-    # # Example usage
-    # pose_data_example = {
-    #     0: {  # 第0帧：引拍阶段（手臂弯曲）
-    #         "right_shoulder": {"x": 0.5, "y": 0.5, "z": 0.5},
-    #         "right_elbow": {"x": 0.55, "y": 0.45, "z": 0.4},
-    #         "right_wrist": {"x": 0.52, "y": 0.55, "z": 0.3},
-    #         "right_hip": {"x": 0.5, "y": 0.8, "z": 0.5},
-    #     },
-    #     1: {  # 第1帧：挥拍中阶段（手臂开始甩出，速度增加）
-    #         "right_shoulder": {"x": 0.51, "y": 0.5, "z": 0.5},  # 肩膀相对固定
-    #         "right_elbow": {"x": 0.6, "y": 0.35, "z": 0.45},
-    #         "right_wrist": {"x": 0.65, "y": 0.3, "z": 0.5},
-    #         "right_hip": {"x": 0.51, "y": 0.8, "z": 0.5},
-    #     },
-    #     2: {  # 第2帧：击球瞬间（手臂完全伸直，速度达到巅峰，且手腕超过肘部）
-    #         "right_shoulder": {"x": 0.52, "y": 0.5, "z": 0.5},
-    #         "right_elbow": {"x": 0.65, "y": 0.2, "z": 0.55},
-    #         "right_wrist": {"x": 0.75, "y": 0.05, "z": 0.6},  # 手腕y最小（最高），x最大（甩得最远）
-    #         "right_hip": {"x": 0.52, "y": 0.8, "z": 0.5},
-    #     }
-    # }
-    # impact_height_example = 2.5
-    # diagnosis_engine = DiagnosisEngine(length_shoulder=0.3, length_elbow=0.3, length_wrist=0.2)
-    # report = diagnosis_engine.analyze_stroke(pose_data_example, impact_height_example)
-    # print(report)
-    print("🚀 开始测试 TechniqueRulesLayer...\n")
-
-    # 1. 初始化规则引擎
-    # 阈值计算: 0.25 + 0.30 = 0.55m
+    pass
