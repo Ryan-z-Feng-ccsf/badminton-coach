@@ -3,7 +3,7 @@ Input:
     Raw video or live camera
 output:
 metadata={
-    is_valid= True/False,
+    is_valid= True/False, # Indicate if there are people detected
     fps = ?
     pose_data_payload = {
     0: {
@@ -74,3 +74,59 @@ class PoseDetector:
         # Return True allows the exception to propagate up
         # Return False would swallow the exception
         return False
+
+    def process_frame(self, frame_idx: int, frame_rgb, fps: float) -> dict:
+        """
+        Extract parameters in one frame
+        param: frame_idx: index of the frame
+        param: frame_rgb: RGB frame
+        param: fps: FPS
+        return: result: metadata
+        """
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+        timestamp_ms = int((frame_idx / fps) * 1000)
+        detection_result = self.detector.detect_for_video(mp_image, timestamp_ms=timestamp_ms)
+        result: dict
+        # ensure the detection result contains pose landmarks
+        if detection_result.pose_landmarks:
+            print("Pose landmarks detected")
+
+            # Extract all the 33 points
+            landmarks = detection_result.pose_landmarks[0]
+            result = {
+                "is_valid": detection_result.is_valid,
+                "frame": {
+                    "right_shoulder": [landmarks[12].x, landmarks[12].y, landmarks[12].z],
+                    "right_elbow": [landmarks[14].x, landmarks[14].y, landmarks[14].z],
+                    "right_wrist": [landmarks[16].x, landmarks[16].y, landmarks[16].z],
+                    "right_hip": [landmarks[24].x, landmarks[24].y, landmarks[24].z]
+                }
+            }
+        else:
+            print("No pose landmarks detected")
+            result = {
+                "is_valid": False,
+                "frame": None
+            }
+        return result
+
+
+class VideoCapture:
+    def __init__(self, video_path_key="VIDEO_PATH"):
+        # Get the relative path
+        raw_video_path = os.getenv(video_path_key)
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        self.video_path = os.path.abspath(os.path.join(cur_dir, raw_video_path))
+
+    def __enter__(self):
+        self.cap = cv2.VideoCapture(self.video_path)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cap.release()
+        if exc_val is not None:
+            print(f"An exception occurred: {exc_val}")
+        return False
+
+    def get_fps(self):
+        return self.cap.get(cv2.CAP_PROP_FPS)
