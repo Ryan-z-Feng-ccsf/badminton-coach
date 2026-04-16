@@ -75,15 +75,18 @@ class PoseDetector:
         # Return False would swallow the exception
         return False
 
-    def process_frame(self, frame_idx: int, frame_rgb, fps: float) -> dict:
+    def process_frame(self, frame_idx: int, frame_bgr, fps: float) -> dict:
         """
         Extract parameters in one frame
         param: frame_idx: index of the frame
-        param: frame_rgb: RGB frame
+        param: frame_bgr: BGR frame
         param: fps: FPS
         return: result: metadata
         """
+        # Convert the BGR image to RGB
+        frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+        # Set up for timestamp in milliseconds for the current time
         timestamp_ms = int((frame_idx / fps) * 1000)
         detection_result = self.detector.detect_for_video(mp_image, timestamp_ms=timestamp_ms)
         result: dict
