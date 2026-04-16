@@ -108,7 +108,7 @@ class TechniqueRulesLayer:
         ]
         self.impact_frame = impact_frame
         self.window_frame = int(round(fps * lock_seconds))
-        self.impact_height = arm_extension_length
+        self.arm_extension_length = arm_extension_length
 
     def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
@@ -168,25 +168,25 @@ class TechniqueRulesLayer:
                 "idx_wrist_peak": idx_wrist_peak
             }
 
-    def evaluate_impact_point(self) -> Dict[str, Any]:
+    def evaluate_arm_extension_length(self) -> Dict[str, Any]:
         """
         Evaluate the impact point of the ball based on the height of the impact.
         param impact_height: The height of the impact point in meters
         return: A dictionary containing the diagnosis result, including whether the impact point is optimal and any relevant details.
         """
-        impact_ratio = self.impact_height / self.HITTING_HEIGHT_THRESHOLD
+        impact_ratio = self.arm_extension_length / self.HITTING_HEIGHT_THRESHOLD
         for min_ratio, max_ratio, is_optimal, message in self.IMPACT_RULES:
             if min_ratio <= impact_ratio < max_ratio:
                 return {
                     "issue": message,
                     "is_optimal": is_optimal,
-                    "impact_height": self.impact_height,
+                    "impact_height": self.arm_extension_length,
                     "threshold": self.HITTING_HEIGHT_THRESHOLD
                 }
         return {
             "issue": "Impact point evaluation failed, height ratio out of expected range",
             "is_optimal": None,
-            "impact_height": self.impact_height,
+            "impact_height": self.arm_extension_length,
             "threshold": self.HITTING_HEIGHT_THRESHOLD
         }
 
@@ -224,7 +224,7 @@ class DiagnosisEngine:
             "kinetic_chain": self.technique_rules_layer.check_kinetic_chain(smoothed_right_shoulder_velocity,
                                                                             smoothed_right_elbow_velocity,
                                                                             smoothed_right_wrist_velocity),
-            "impact_point": self.technique_rules_layer.evaluate_impact_point()}
+            "impact_point": self.technique_rules_layer.evaluate_arm_extension_length()}
         return report_result
 
 

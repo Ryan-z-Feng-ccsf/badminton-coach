@@ -57,7 +57,7 @@ def test_kinetic_chain(sample_pose_data):
 
 def test_impact_point():
     layer = TechniqueRulesLayer(2.5, 2.25, 30, 5)
-    result = layer.evaluate_impact_point()
+    result = layer.evaluate_arm_extension_length()
     assert result["is_optimal"] is True
 
 
