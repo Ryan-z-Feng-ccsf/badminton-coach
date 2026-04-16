@@ -4,3 +4,4 @@ mediapipe_pose_landmark.png
 __pyacache__/
 *.pyc
 pose_landmark
+.env
