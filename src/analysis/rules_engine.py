@@ -38,8 +38,8 @@ class SafetyRulesLayer:
     """Layer 1: Universal Safety Rules"""
 
     def __init__(self):
-        self.ELBOW_ANGLE_THRESHOLD = 175.0  # Example threshold for elbow angle
-        self.SHOULDER_ANGLE_THRESHOLD = 100.0  # Example threshold for shoulder angle
+        self._ELBOW_ANGLE_THRESHOLD = 175.0  # Example threshold for elbow angle
+        self._SHOULDER_ANGLE_THRESHOLD = 100.0  # Example threshold for shoulder angle
 
     def check_elbow_hyperextension(self, elbow_angle_max: float) -> Dict[str, Any]:
         """
@@ -47,7 +47,7 @@ class SafetyRulesLayer:
         param elbow_angle: The calculated angle of the elbow joint in degrees
         return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
         """
-        if elbow_angle_max > self.ELBOW_ANGLE_THRESHOLD:
+        if elbow_angle_max > self._ELBOW_ANGLE_THRESHOLD:
             return {
                 "issue": "Elbow Hyperextension Risk",
                 "is_safe": False,
@@ -71,7 +71,7 @@ class SafetyRulesLayer:
         param shoulder_angle: The calculated angle of the shoulder joint in degrees
         return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
         """
-        if shoulder_angle_max > self.SHOULDER_ANGLE_THRESHOLD:
+        if shoulder_angle_max > self._SHOULDER_ANGLE_THRESHOLD:
             return {
                 "issue": "Shoulder Impingement Risk",
                 "is_safe": False,
@@ -98,17 +98,17 @@ class TechniqueRulesLayer:
 
         # lock_seconds: the swing from start to finish
 
-        self.HITTING_HEIGHT_THRESHOLD = impact_threshold  # Example threshold for hitting height in meters
+        self._HITTING_HEIGHT_THRESHOLD = impact_threshold  # Example threshold for hitting height in meters
         # Set up rules for evaluating the impact point, such as optimal height range.
         # format: (min_ratio, max_ratio, is_optimal, message)
-        self.IMPACT_RULES = [
+        self._IMPACT_RULES = [
             (0.0, 0.80, False, "Impact point is too low, likely hitting the net or causing a weak shot"),
             (0.80, 0.95, True, "Impact point is optimal, allowing for good power and control"),
             (0.95, float('inf'), False, "Arm fully locked at impact, high risk of injury")
         ]
-        self.impact_frame = impact_frame
-        self.window_frame = int(round(fps * lock_seconds))
-        self.arm_extension_length = arm_extension_length
+        self._impact_frame = impact_frame
+        self._window_frame = int(round(fps * lock_seconds))
+        self._arm_extension_length = arm_extension_length
 
     def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
@@ -130,8 +130,8 @@ class TechniqueRulesLayer:
                 "idx_wrist_peak": None
             }
         # if impact_frame is less than the window frame, we can only analyze from the start of the data to the impact frame
-        start_frame = max(0, int(self.impact_frame) - int(self.window_frame))  # Analyze a window of frames leading up to the impact frame to check the sequence of velocity peaks
-        end_frame = self.impact_frame + 1
+        start_frame = max(0, int(self._impact_frame) - int(self._window_frame))  # Analyze a window of frames leading up to the impact frame to check the sequence of velocity peaks
+        end_frame = self._impact_frame + 1
         shoulder_slice = np.asarray(smoothed_right_shoulder_velocity[start_frame:end_frame])
         elbow_slice = np.asarray(smoothed_right_elbow_velocity[start_frame:end_frame])
         wrist_slice = np.asarray(smoothed_right_wrist_velocity[start_frame:end_frame])
@@ -174,28 +174,28 @@ class TechniqueRulesLayer:
         param impact_height: The height of the impact point in meters
         return: A dictionary containing the diagnosis result, including whether the impact point is optimal and any relevant details.
         """
-        impact_ratio = self.arm_extension_length / self.HITTING_HEIGHT_THRESHOLD
-        for min_ratio, max_ratio, is_optimal, message in self.IMPACT_RULES:
+        impact_ratio = self._arm_extension_length / self._HITTING_HEIGHT_THRESHOLD
+        for min_ratio, max_ratio, is_optimal, message in self._IMPACT_RULES:
             if min_ratio <= impact_ratio < max_ratio:
                 return {
                     "issue": message,
                     "is_optimal": is_optimal,
-                    "impact_height": self.arm_extension_length,
-                    "threshold": self.HITTING_HEIGHT_THRESHOLD
+                    "impact_height": self._arm_extension_length,
+                    "threshold": self._HITTING_HEIGHT_THRESHOLD
                 }
         return {
             "issue": "Impact point evaluation failed, height ratio out of expected range",
             "is_optimal": None,
-            "impact_height": self.arm_extension_length,
-            "threshold": self.HITTING_HEIGHT_THRESHOLD
+            "impact_height": self._arm_extension_length,
+            "threshold": self._HITTING_HEIGHT_THRESHOLD
         }
 
 class DiagnosisEngine:
     """Layer 3: Main Diagnosis Engine"""
 
     def __init__(self, impact_threshold, arm_extension_length: float, fps:float,  impact_frame: float,):
-        self.safety_rules_layer = SafetyRulesLayer()
-        self.technique_rules_layer = TechniqueRulesLayer(impact_threshold, arm_extension_length, fps, impact_frame)
+        self._safety_rules_layer = SafetyRulesLayer()
+        self._technique_rules_layer = TechniqueRulesLayer(impact_threshold, arm_extension_length, fps, impact_frame)
 
     def analyze_stroke(self, smoothed_right_shoulder_velocity: list[float],
                        smoothed_right_elbow_velocity: list[float],
@@ -213,18 +213,18 @@ class DiagnosisEngine:
         """
 
         report_result: Dict[str, Any] = {}
-        elbow_hyperextension_result = self.safety_rules_layer.check_elbow_hyperextension(max(right_elbow_angle))
-        shoulder_impingement_result = self.safety_rules_layer.check_shoulder_impingement(max(right_shoulder_angle))
+        elbow_hyperextension_result = self._safety_rules_layer.check_elbow_hyperextension(max(right_elbow_angle))
+        shoulder_impingement_result = self._safety_rules_layer.check_shoulder_impingement(max(right_shoulder_angle))
         report_result["safety_report"] = {
             "elbow_hyperextension": elbow_hyperextension_result,
             "shoulder_impingement": shoulder_impingement_result
         }
 
         report_result["technique_report"] = {
-            "kinetic_chain": self.technique_rules_layer.check_kinetic_chain(smoothed_right_shoulder_velocity,
-                                                                            smoothed_right_elbow_velocity,
-                                                                            smoothed_right_wrist_velocity),
-            "impact_point": self.technique_rules_layer.evaluate_arm_extension_length()}
+            "kinetic_chain": self._technique_rules_layer.check_kinetic_chain(smoothed_right_shoulder_velocity,
+                                                                             smoothed_right_elbow_velocity,
+                                                                             smoothed_right_wrist_velocity),
+            "impact_point": self._technique_rules_layer.evaluate_arm_extension_length()}
         return report_result
 
 
