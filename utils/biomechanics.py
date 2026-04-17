@@ -30,16 +30,22 @@ def calculate_3d_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
 
 
 def calculate_joint_velocity(
-                             dx: list[np.ndarray],
-                             dy: list[np.ndarray],
-                             dz: list[np.ndarray]
+                             vx: list[np.ndarray],
+                             vy: list[np.ndarray],
+                             vz: list[np.ndarray]
                              ) -> list:
     """
-    Calculate the velocity of a joint between two consecutive frames.
-    param joint: A list of 3D coordinates for the joint across frames
-    return: The velocity of the joint in m/s, calculated as the distance between the joint positions in consecutive frames divided by the time interval (assuming 30 FPS, so time interval is 1/30 seconds).
+    Calculates the 3D scalar speed from independent X, Y, Z velocity components.
+
+    Args:
+        vx: 1D array of velocity components along the X axis.
+        vy: 1D array of velocity components along the Y axis.
+        vz: 1D array of velocity components along the Z axis.
+
+    Returns:
+        list[float]: A list of scalar speeds for each frame, rounded to 3 decimal places.
     """
-    vel_vectors = np.stack([dx, dy, dz], axis=1)
+    vel_vectors = np.stack([vx, vy, vz], axis=1)
     scalar_speeds = np.linalg.norm(vel_vectors, axis=1)
     return np.round(scalar_speeds, 3).tolist()
 
@@ -52,6 +58,3 @@ if __name__ == "__main__":
     angle = calculate_3d_angle(a, b, c)
     print(f"Angle between AB and BC: {angle} degrees")
 
-    joint_positions = [np.array([0, 0, 0]), np.array([1, 1, 1])]
-    velocity = calculate_joint_velocity(0, joint_positions)
-    print(f"Joint velocity: {velocity} m/s")
