@@ -29,18 +29,19 @@ def calculate_3d_angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
     return round(float(angle_degrees),3)
 
 
-def calculate_joint_velocity(i: int, joint: list[np.ndarray]) -> float:
+def calculate_joint_velocity(
+                             dx: list[np.ndarray],
+                             dy: list[np.ndarray],
+                             dz: list[np.ndarray]
+                             ) -> list:
     """
     Calculate the velocity of a joint between two consecutive frames.
-    param i: The index of the current frame
     param joint: A list of 3D coordinates for the joint across frames
     return: The velocity of the joint in m/s, calculated as the distance between the joint positions in consecutive frames divided by the time interval (assuming 30 FPS, so time interval is 1/30 seconds).
     """
-    dx = joint[i + 1][0] - joint[i][0]
-    dy = joint[i + 1][1] - joint[i][1]
-    dz = joint[i + 1][2] - joint[i][2]
-    joint_velocity = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-    return round(float(joint_velocity),3)
+    vel_vectors = np.stack([dx, dy, dz], axis=1)
+    scalar_speeds = np.linalg.norm(vel_vectors, axis=1)
+    return np.round(scalar_speeds, 3).tolist()
 
 
 if __name__ == "__main__":
