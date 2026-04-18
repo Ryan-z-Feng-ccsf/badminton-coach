@@ -23,8 +23,7 @@ fps=?
 }}}
 output:
 impact_height : float
-length_elbow : float
-length_wrist : float
+arm_extension_length: float
 right_elbow_angle : list[float]
 right_shoulder_angle : list[float]
 smooth_shoulder_velocity: list[float]
@@ -32,8 +31,8 @@ smooth_elbow_velocity: list[float]
 smooth_wrist_velocity: list[float]
 """
 import numpy as np
-from biomechanics import calculate_joint_velocity, calculate_3d_angle
-from filters import calculate_smoothed_vel
+from utils.biomechanics import calculate_joint_velocity, calculate_3d_angle
+from utils.filters import calculate_smoothed_vel
 
 
 def extract_pose_data_payload(metadata: dict, idx: str = "pose_data_payload"):
@@ -109,8 +108,7 @@ class AngleMetrics:
     at the elbow and shoulder joints during the impact event.
     """
 
-    def extract_b_joint_angle(self, a_joint_name: str, b_joint_name: str, c_joint_name: str,
-                              pose_data: dict) -> list[float]:
+    def extract_b_joint_angle(self, a: np.ndarray, b: np.ndarray, c: np.ndarray) -> list[float]:
         """
         Extract the angles at the elbow and shoulder joints during the impact event.
         param a_joint_name: The name of the first joint (e.g., "right_shoulder")
@@ -120,12 +118,8 @@ class AngleMetrics:
         return: A list of angles for the specified joint across frames
         """
         angles = []
-        for frame in sorted(pose_data.keys()):
-            a = extract_body_part(frame, pose_data, a_joint_name)
-            b = extract_body_part(frame, pose_data, b_joint_name)
-            c = extract_body_part(frame, pose_data, c_joint_name)
-            angle = calculate_3d_angle(a, b, c)
-            angles.append(angle)
+        angle = calculate_3d_angle(a, b, c)
+        angles.append(angle)
         return angles
 
 
@@ -150,6 +144,37 @@ class VelocityMetrics:
         velocities: list = calculate_joint_velocity(vx, vy, vz)
 
         return velocities
+
+class Metrics:
+    def __init__(self,impact_frame:int) :
+        self._impact_metrics = ImpactMetrics(impact_frame)
+        self._velocity_metrics = VelocityMetrics()
+        self._angle_metrics = AngleMetrics()
+    def extract_metrics(
+            self,
+            right_shoulder: np.ndarray,
+            right_elbow: np.ndarray,
+            right_wrist: np.ndarray,
+            right_hip: np.ndarray,
+            pose_data: dict,
+            fps: float
+    )->dict:
+        impact_threshold = self._impact_metrics.extract_impact_threshold(right_shoulder, right_elbow, right_wrist)
+        arm_extension_length = self._impact_metrics.extract_arm_extension_length(right_shoulder, right_wrist)
+        elbow_angle = self._angle_metrics.extract_b_joint_angle(right_wrist, right_elbow, right_shoulder)
+        shoulder_angle = self._angle_metrics.extract_b_joint_angle(right_elbow, right_shoulder, right_hip)
+        shoulder_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_shoulder', fps)
+        elbow_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_elbow', fps)
+        wrist_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_wrist', fps)
+        return {
+            'impact_threshold': impact_threshold,
+            'arm_extension_length': arm_extension_length,
+            'right_elbow_angle': elbow_angle,
+            'right_shoulder_angle': shoulder_angle,
+            'right_shoulder_velocity': shoulder_vel,
+            'right_elbow_velocity': elbow_vel,
+            'right_wrist_velocity': wrist_vel
+        }
 
 
 if __name__ == "__main__":
@@ -329,6 +354,5 @@ if __name__ == "__main__":
     print(impact_metrics.extract_arm_extension_length(right_shoulder, right_wrist))
     print(impact_metrics.extract_arm_extension_length(right_elbow, right_wrist))
     angle_metrics = AngleMetrics()
-    print(angle_metrics.extract_b_joint_angle("right_shoulder", "right_elbow", "right_wrist", pose_data_payload))
     velocity_metrics = VelocityMetrics()
     print(velocity_metrics.extract_joint_velocity(pose_data_payload, "right_shoulder", fps=60))
