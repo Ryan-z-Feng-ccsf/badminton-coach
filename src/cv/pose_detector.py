@@ -115,7 +115,7 @@ class PoseDetector:
             print("No pose landmarks detected")
             result = {
                 "is_valid": False,
-                "frame": None
+                frame_idx: None
             }
         return result
 
