@@ -3,12 +3,12 @@ from moviepy import VideoFileClip
 from scipy.signal import find_peaks
 import librosa
 import os
-
+from dotenv import load_dotenv
 """
 intput: video file
-output:
+
 #  Data Adapter ：
-fps = 60.026353033038895
+fps = 60.026
 wrist_wrist_vel=
 [0.03113222 0.05088606 0.05721603 0.05963984 0.06096867 0.05939249
  0.05692969 0.04784107 0.04885278 0.05403393 0.06434244 0.05712285
@@ -32,15 +32,19 @@ wrist_wrist_vel=
  0.00778767 0.00812659 0.00968052 0.0103105  0.01160244 0.00974036
  0.00479871 0.0025744 ]
 
+output: 
+impact_frame
 """
-
+load_dotenv()
 
 class SensorFusion:
-    def __init__(self,fps:float, tolerance: int = 2):
-        self.fps = fps  # Frames per second of the video, used to convert between time and frame indices
-        self.TOLERANCE = tolerance  # Number of frames within which to consider an audio peak and a visual peak as matching
-        self.VIDEO_PATH = "../../data/raw_videos/test_clear_trim3.mp4"
-        self.AUDIO_PATH = "../../data/audio/temp_audio.wav"
+    def __init__(self, fps: float, video_path_key="VIDEO_PATH", tolerance: int = 2):
+        self._fps = fps  # Frames per second of the video, used to convert between time and frame indices
+        self._TOLERANCE = tolerance  # Number of frames within which to consider an audio peak and a visual peak as matching
+        raw_relate_path = os.getenv(video_path_key)
+        cur_dir= os.path.dirname(os.path.abspath(__file__))
+        self._VIDEO_PATH = os.path.abspath(os.path.join(cur_dir, raw_relate_path))
+        self._AUDIO_PATH = "../../data/audio/temp_audio.wav"
 
     def detect_impact_multimodel(self, right_wrist_vel: list[float]) -> int:
         """
@@ -48,11 +52,11 @@ class SensorFusion:
         Args:        right_wrist_vel (list[float]): A list of velocities for the right wrist joint across frames.
         Returns:        int: The index of the confirmed impact frame in the video.
         """
-        video = VideoFileClip(self.VIDEO_PATH)
+        video = VideoFileClip(self._VIDEO_PATH)
         # Extract audio from the video and save it as a temporary file
-        video.audio.write_audiofile(self.AUDIO_PATH, logger=None)
+        video.audio.write_audiofile(self._AUDIO_PATH, logger=None)
         # Load the audio file using librosa
-        y, sr = librosa.load(self.AUDIO_PATH, sr=None)
+        y, sr = librosa.load(self._AUDIO_PATH, sr=None)
         # Now you can use the audio data (y) and sample rate (sr) for further processing
         print(f"Audio loaded successfully, sample rate: {sr}, audio shape: {y}")
         # detect the onset strength of the impact sound
@@ -68,8 +72,8 @@ class SensorFusion:
 
         )
         audio_times_seconds = librosa.frames_to_time(audio_peaks_frames, sr=sr)
-        print(fps)
-        audio_video_frames = [int(t * self.fps) for t in
+        print(self._fps)
+        audio_video_frames = [int(t * self._fps) for t in
                               audio_times_seconds]  # Convert audio peak times to corresponding video frame indices
         print("--------------")
         print(audio_video_frames)
@@ -86,36 +90,36 @@ class SensorFusion:
             confirmed_impacts = []
             for audio_peak in audio_video_frames:
                 for visual_peak in visual_peaks:
-                    if abs(audio_peak - visual_peak) <= self.TOLERANCE:
+                    if abs(audio_peak - visual_peak) <= self._TOLERANCE:
                         final_frame = int((audio_peak + visual_peak) / 2)
                         confirmed_impacts.append(final_frame)
                         break
             if confirmed_impacts:
                 final_impact = confirmed_impacts[0]
                 print(
-                    f"Confirmed impact detected at video frame: {final_impact}, which corresponds to time: {final_impact / fps:.2f} seconds")
+                    f"Confirmed impact detected at video frame: {final_impact}, which corresponds to time: {final_impact / self._fps:.2f} seconds")
 
             else:
                 # If no confirmed impacts are found, we can still use the visual peaks to determine the most likely impact frame based on the highest wrist velocity
                 final_impact = visual_peaks[
                     int(np.argmax([right_wrist_vel[smooth_idx] for smooth_idx in visual_peaks]))]
                 print(
-                    f"No confirmed impacts, but the most likely impact frame based on wrist velocity is: {final_impact}, which corresponds to time: {final_impact / fps:.2f} seconds")
+                    f"No confirmed impacts, but the most likely impact frame based on wrist velocity is: {final_impact}, which corresponds to time: {final_impact / self._fps:.2f} seconds")
 
         except TypeError as e:
             print(f"Error in find_peaks: {e}")
         except Exception as e:
             print(f"Unexpected error in find_peaks: {e}")
         finally:
-            if os.path.exists(self.AUDIO_PATH):
+            if os.path.exists(self._AUDIO_PATH):
                 # Remove the temporary audio file after loading it
-                os.remove(self.AUDIO_PATH)
+                os.remove(self._AUDIO_PATH)
                 print("Temporary audio file removed.")
             return final_impact
 
 
 if __name__ == "__main__":
-    fps=60.026353033038895
+    fps = 60.026353033038895
     # Example usage
     sensor_fusion = SensorFusion(fps)
     # Simulated wrist velocity data (replace with actual data)
