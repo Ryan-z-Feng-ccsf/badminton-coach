@@ -23,6 +23,9 @@ length_elbow : float
 length_wrist : float
 right_elbow_angle : list[float]
 right_shoulder_angle : list[float]
+smooth_shoulder_velocity: list[float]
+smooth_elbow_velocity: list[float]
+smooth_wrist_velocity: list[float]
 """
 import numpy as np
 from biomechanics import calculate_joint_velocity, calculate_3d_angle
