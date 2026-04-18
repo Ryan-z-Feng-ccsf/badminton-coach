@@ -104,7 +104,7 @@ class PoseDetector:
             landmarks = detection_result.pose_landmarks[0]
             result = {
                 "is_valid": True,
-                frame_idx: {
+                'joints': {
                     "right_shoulder": self._get_pt(landmarks[12]),
                     "right_elbow": self._get_pt(landmarks[14]),
                     "right_wrist": self._get_pt(landmarks[16]),
@@ -115,7 +115,7 @@ class PoseDetector:
             print("No pose landmarks detected")
             result = {
                 "is_valid": False,
-                frame_idx: None
+                'joints': None
             }
         return result
 
@@ -153,7 +153,7 @@ class DetectorEngine:
                 while True:
                     success, frame_bgr = video_capture.cap.read()
                     if not success:
-                        print("Video capture failed")
+                        print("Video capture failed / end of video")
                         break
 
                     pose_data_payload[frame_idx] = pose_detector.process_frame(frame_idx, frame_bgr,

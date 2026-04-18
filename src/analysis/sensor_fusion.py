@@ -38,13 +38,14 @@ impact_frame
 load_dotenv()
 
 class SensorFusion:
-    def __init__(self, fps: float, video_path_key="VIDEO_PATH", tolerance: int = 2):
+    def __init__(self, fps: float, video_path_key="VIDEO_PATH",audio_path_key="AUDIO_PATH", tolerance: int = 2):
         self._fps = fps  # Frames per second of the video, used to convert between time and frame indices
         self._TOLERANCE = tolerance  # Number of frames within which to consider an audio peak and a visual peak as matching
-        raw_relate_path = os.getenv(video_path_key)
+        raw_relate_video_path = os.getenv(video_path_key)
         cur_dir= os.path.dirname(os.path.abspath(__file__))
-        self._VIDEO_PATH = os.path.abspath(os.path.join(cur_dir, raw_relate_path))
-        self._AUDIO_PATH = "../../data/audio/temp_audio.wav"
+        self._VIDEO_PATH = os.path.abspath(os.path.join(cur_dir, raw_relate_video_path))
+        raw_relative_audio_path = os.getenv(audio_path_key)
+        self._AUDIO_PATH = os.path.abspath(os.path.join(cur_dir, raw_relative_audio_path))
 
     def detect_impact_multimodel(self, right_wrist_vel: list[float]) -> int:
         """
