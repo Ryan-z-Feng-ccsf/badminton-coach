@@ -28,11 +28,17 @@ def format_report():
                                               fps
                                               )
     # Diagnose
-    diagnosis = DiagnosisEngine(extract_metrics['impact_threshold'], extract_metrics['arm_extension_length'],
-                                       fps, impact_frame)
+    diagnosis = DiagnosisEngine(
+        extract_metrics['impact_threshold'],
+        extract_metrics['arm_extension_length'],
+        fps,
+        impact_frame
+    )
     report = diagnosis.analyze_stroke(extract_metrics['right_shoulder_velocity'],
-                                      extract_metrics['right_elbow_velocity'], extract_metrics['right_wrist_velocity'],
-                                      extract_metrics['right_shoulder_angle'], extract_metrics['right_elbow_angle'])
+                                      extract_metrics['right_elbow_velocity'],
+                                      extract_metrics['right_wrist_velocity'],
+                                      extract_metrics['right_shoulder_angle'],
+                                      extract_metrics['right_elbow_angle'])
     return report
 
 if __name__ == "__main__":
