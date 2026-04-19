@@ -1,7 +1,14 @@
-.venv
+# Environments
+backend/.venv
+backend/.env
+
+# IDEA
 .idea
 mediapipe_pose_landmark.png
+
+# Python Cache
 __pyacache__/
 *.pyc
+
+# Reference
 pose_landmark
-.env
