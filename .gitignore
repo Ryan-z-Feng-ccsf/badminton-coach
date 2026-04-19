@@ -12,3 +12,9 @@ __pyacache__/
 
 # Reference
 pose_landmark
+
+# Ignore all the files under backend/data/audio/*
+backend/data/audio/*
+
+# Keep the .gitkeep
+!backend/data/audio/.gitkeep
