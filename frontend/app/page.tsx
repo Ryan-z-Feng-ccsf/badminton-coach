@@ -71,6 +71,50 @@ export default function Home() {
     <main className='p-8'>
       <h1 className='text-2xl font-bold mb-6'>Badminton AI - Video</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4 max-w-sm'>
+        
+        <select
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          className='border border-gray-300 rounded p-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          required
+        >
+          <option value='' disabled>Select a technique</option>
+          <option value='high_clear'>High Clear</option>
+          <optgroup label='smash'>
+            <option value='smash_standard'>Standard Smash</option>
+            <option value='smash_stick'>Stick Smash</option>
+            <option value='smash_jump'>Jump Smash</option>
+            <option value='smash_slice'>Slice Smash</option>
+          </optgroup>
+          <option value='half_smash'>Half Smash</option>
+          <optgroup label='drop_shot'>
+            <option value='drop_slice'>Slice Drop</option>
+            <option value='drop_reverse_slice'>Reverse Slice Drop</option>
+          </optgroup>
+
+          <option value='net_shot'>Net Shot</option>
+          <option value='net_spin'>Net Spin</option>
+
+        </select>
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className='border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-12 text-center'
+        >
+
+          {file ? (
+            <p className="text-green-600 font-semibold">{file.name}</p>
+          ) : (
+            <p className="text-gray-500">Drag & drop your video here</p>
+          )
+
+          }
+
+        </div>
+        <button type='submit' className='bg-blue-600 text-white p-2 rounded'>
+          Upload
+        </button>
         {isLoading && (
           <div>
             🏸 Analyzing,wait a second
@@ -117,49 +161,6 @@ export default function Home() {
 
           </div>
         )}
-        <select
-          value={action}
-          onChange={(e) => setAction(e.target.value)}
-          className='border border-gray-300 rounded p-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-          required
-        >
-          <option value='' disabled>Select a technique</option>
-          <option value='high_clear'>High Clear</option>
-          <optgroup label='smash'>
-            <option value='smash_standard'>Standard Smash</option>
-            <option value='smash_stick'>Stick Smash</option>
-            <option value='smash_jump'>Jump Smash</option>
-            <option value='smash_slice'>Slice Smash</option>
-          </optgroup>
-          <option value='half_smash'>Half Smash</option>
-          <optgroup label='drop_shot'>
-            <option value='drop_slice'>Slice Drop</option>
-            <option value='drop_reverse_slice'>Reverse Slice Drop</option>
-          </optgroup>
-
-          <option value='net_shot'>Net Shot</option>
-          <option value='net_spin'>Net Spin</option>
-
-        </select>
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className='border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-12 text-center'
-        >
-
-          {file ? (
-            <p className="text-green-600 font-semibold">{file.name}</p>
-          ) : (
-            <p className="text-gray-500">Drag & drop your video here</p>
-          )
-
-          }
-
-        </div>
-        <button type='submit' className='bg-blue-600 text-white p-2 rounded'>
-          Upload
-        </button>
       </form>
 
     </main>
