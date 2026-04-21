@@ -5,6 +5,7 @@ backend/.env
 # IDEA
 .idea
 mediapipe_pose_landmark.png
+/.vscode
 
 # Python Cache
 __pyacache__/
