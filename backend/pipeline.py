@@ -3,19 +3,20 @@ from src.analysis.rules_engine import DiagnosisEngine
 from src.analysis.sensor_fusion import SensorFusion
 from utils import extract
 from utils.extract import VelocityMetrics, Metrics
+from config.core import config
 
 
 
-def format_report():
+def format_report() -> dict:
     engine = DetectorEngine()
-    metadata = engine.get_metadata()
+    metadata = engine.get_metadata(config.get_path("POSE_MODEL_PATH"))
     # Extract fps
     fps = metadata['fps']
     # Extract pose data payload
     pose_data_payload = extract.extract_pose_data_payload(metadata)
     vel_metric = VelocityMetrics()
     visual_impact = vel_metric.extract_joint_velocity(pose_data_payload, 'right_wrist', fps)
-    sensor_fusion = SensorFusion(fps)
+    sensor_fusion = SensorFusion(fps,config.get_path("VIDEO_PATH"),config.get_path("AUDIO_PATH"))
     # Extract impact frame
     impact_frame = sensor_fusion.detect_impact_multimodel(visual_impact)
     # Extract metrics

@@ -34,18 +34,12 @@ load_dotenv()
 
 
 class PoseDetector:
-    def __init__(self, model_path_key="POSE_MODEL_PATH",
+    def __init__(self, model_path : str,
                  min_pose_detection_confidence=0.5, min_tracking_confidence=0.5, output_segmentation_masks=False):
         """
         initialize the PoseLandmarker object
-        """
-        # Get the relative path from env
-        raw_relative_path = os.getenv(model_path_key)
-        # get the absolute path of this python script directory
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        # Concatenate the current directory with the relative path
-        # and normalize it to the final correct absolute path
-        self._model_path = os.path.abspath(os.path.join(cur_dir, raw_relative_path))
+        """  
+        self._model_path = model_path
         self._min_pose_detection_confidence = min_pose_detection_confidence
         self._min_tracking_confidence = min_tracking_confidence
         self._output_segmentation_masks = output_segmentation_masks
@@ -144,9 +138,9 @@ class VideoCapture:
 
 
 class DetectorEngine:
-    def get_metadata(self):
+    def get_metadata(self, model_path:str):
         metadata: dict = {}
-        with PoseDetector() as pose_detector:
+        with PoseDetector(model_path) as pose_detector:
             with VideoCapture() as video_capture:
                 pose_data_payload: dict = {}
                 frame_idx = 0
@@ -166,5 +160,6 @@ class DetectorEngine:
 
 
 if __name__ == "__main__":
-    engine = DetectorEngine()
+    from config.core import config
+    engine = DetectorEngine(config.get_path("POSE_MODEL_PATH"))
     print(engine.get_metadata())
