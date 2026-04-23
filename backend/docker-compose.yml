@@ -12,6 +12,7 @@ services:
     # Read form environment file
       - POSE_MODEL_PATH=${POSE_MODEL_PATH}
       - AUDIO_PATH=${AUDIO_PATH}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - "./data:/backend/data"
     restart: unless-stopped
