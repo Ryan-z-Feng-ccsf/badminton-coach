@@ -3,8 +3,8 @@ from pipeline import format_report
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
-from backend.src.llm.manager import LLMManager
-from backend.src.llm.prompt_builder import build_prompt
+from src.llm.manager import LLMManager
+from src.llm.prompt_builder import build_prompt
 
 
 app = FastAPI()
@@ -27,16 +27,24 @@ async def upload_video(
     # Define action
     action: str = Form(),
 ) -> dict:
-    try:
-        # Try catch the CV Layer Errors
+    # -- Block 1 -- CV Layer
+    try:       
         # Download the video from the cache into the disk
         # CV/Mediapipe needs to read the file from the disk
-        with TempVideoManager(video) as temp_video_path:
+        with TempVideoManager(video.file) as temp_video_path:
             report = format_report(temp_video_path)
+            print(report)
             prompt = build_prompt(report=report, action=action)
+    except Exception as e:
+        # This instantly triggers React's catch block
+        print(f"CV Layer Error {e}")
+        raise HTTPException(status_code=422, detail="Video processing failed.")
+    # -- Block 2 -- LLM Layer
+    try:
         manager = LLMManager()
         feedback = await manager.manage_model(prompt=prompt)
-
+        print(feedback)
+    
     except Exception as e:
         # This instantly triggers React's catch block
         print(f"LLM Layers Error {e}")

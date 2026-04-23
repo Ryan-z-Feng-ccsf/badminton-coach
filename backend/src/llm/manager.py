@@ -9,7 +9,7 @@ MODELS=[
 
 import json
 import re
-from client import GeminiClient
+from src.llm.client import GeminiClient
 
 
 class LLMManager:
