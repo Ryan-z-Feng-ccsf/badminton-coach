@@ -1,13 +1,18 @@
 'use client'
 
 import React, {useState } from 'react';
+interface CoachFeedback{
+  problem:string;
+  improvement: string;
+  power_technique:string;
+}
 export default function Home() {
 
   const [file, setFile] = useState<File | null>(null);
   const [action, setAction] = useState<string>("");
   const [isLoading, setLoading] = useState<boolean>(false);
   const [hasError, setError] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<string>("");
+  const [feedback, setFeedback] = useState<CoachFeedback|null>(null);
 
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -157,7 +162,9 @@ export default function Home() {
         {feedback && (
           <div className='mt-8 p-4 bg-green-50 border border-green-200 rounded-lg text-gray-800 whitespace-pre-wrap'>
             <h3 className='font-bold text-green-700 mb-2'>AI Coach Feedbcak</h3>
-            <p>{feedback}</p>
+            <p>{feedback.problem}</p>
+            <p>{feedback.improvement}</p>
+            <p>{feedback.power_technique}</p>
 
           </div>
         )}

@@ -39,5 +39,5 @@ class TempVideoManager:
 
     def _generate_file_name(self):
         unique_id = str(uuid.uuid4())
-        file_path = os.path.abspath(f"data/raw_video/{unique_id}.mp4")
+        file_path = os.path.abspath(f"data/raw_videos/{unique_id}.mp4")
         return file_path
