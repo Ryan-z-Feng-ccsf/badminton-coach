@@ -1,4 +1,4 @@
-from config.core.config import TempVideoManager 
+from config.core.config import TempVideoManager
 from pipeline import format_report
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,18 +26,14 @@ async def upload_video(
     video: UploadFile = File(),
     # Define action
     action: str = Form(),
-    
 ) -> dict:
-    # Try catch the CV Layer Errors
     try:
-        report = format_report(video)
-        prompt = build_prompt(report=report, action=action)
-    except Exception as e:
-        # This instantly triggers React's catch block
-        print(f"CV Layer Error {e}")
-        raise HTTPException(status_code=422, detail="Video processing failed.")
-    # Try catch the LLM Errors
-    try:
+        # Try catch the CV Layer Errors
+        # Download the video from the cache into the disk
+        # CV/Mediapipe needs to read the file from the disk
+        with TempVideoManager(video) as temp_video_path:
+            report = format_report(temp_video_path)
+            prompt = build_prompt(report=report, action=action)
         manager = LLMManager()
         feedback = await manager.manage_model(prompt=prompt)
 
@@ -50,4 +46,4 @@ async def upload_video(
     return {
         "status": "processed", 
         "llm_feedback": feedback
-        }
+            }
