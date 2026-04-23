@@ -1,6 +1,4 @@
-import re
-
-from backend.src.llm import manager
+from config.core.config import TempVideoManager 
 from pipeline import format_report
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
