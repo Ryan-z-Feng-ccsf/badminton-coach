@@ -9,14 +9,14 @@ from config.core import config
 
 def format_report(video_path:str) -> dict:
     engine = DetectorEngine()
-    metadata = engine.get_metadata(config.get_path("POSE_MODEL_PATH"))
+    metadata = engine.get_metadata(config.get_path("POSE_MODEL_PATH"),video_path)
     # Extract fps
     fps = metadata['fps']
     # Extract pose data payload
     pose_data_payload = extract.extract_pose_data_payload(metadata)
     vel_metric = VelocityMetrics()
     visual_impact = vel_metric.extract_joint_velocity(pose_data_payload, 'right_wrist', fps)
-    sensor_fusion = SensorFusion(fps,config.get_path(video_path),config.get_path("AUDIO_PATH"))
+    sensor_fusion = SensorFusion(fps,video_path,config.get_path("AUDIO_PATH"))
     # Extract impact frame
     impact_frame = sensor_fusion.detect_impact_multimodel(visual_impact)
     # Extract metrics
@@ -43,4 +43,4 @@ def format_report(video_path:str) -> dict:
     return report
 
 if __name__ == "__main__":
-    print(format_report())
+    print(format_report(config.get_path("VIDEO_PATH")))

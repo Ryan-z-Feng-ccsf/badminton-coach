@@ -115,11 +115,11 @@ class PoseDetector:
 
 
 class VideoCapture:
-    def __init__(self, video_path_key="VIDEO_PATH"):
+    def __init__(self, video_path:str):
         # Get the relative path
-        raw_video_path = os.getenv(video_path_key)
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        self._video_path = os.path.abspath(os.path.join(cur_dir, raw_video_path))
+        
+        
+        self._video_path = video_path
 
     def __enter__(self):
         self.cap = cv2.VideoCapture(self._video_path)
@@ -138,10 +138,10 @@ class VideoCapture:
 
 
 class DetectorEngine:
-    def get_metadata(self, model_path:str):
+    def get_metadata(self, model_path:str,video_path:str):
         metadata: dict = {}
         with PoseDetector(model_path) as pose_detector:
-            with VideoCapture() as video_capture:
+            with VideoCapture(video_path) as video_capture:
                 pose_data_payload: dict = {}
                 frame_idx = 0
                 while True:
