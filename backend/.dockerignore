@@ -1,0 +1,20 @@
+# ignore the virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+.env
+
+*.md
+
+# Ignore the rendering module
+scripts/
+
+# Ignore test
+test/
+
+# Ignore notebook
+notebooks/
+
+# Ignore the videos used to test
+data

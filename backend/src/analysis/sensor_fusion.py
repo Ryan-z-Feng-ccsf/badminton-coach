@@ -1,5 +1,3 @@
-from turtle import st
-
 import numpy as np
 from moviepy import VideoFileClip
 from scipy.signal import find_peaks

@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: badminton-coach-backend
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+    # Read form environment file
+      - POSE_MODEL_PATH=${POSE_MODEL_PATH}
+      - AUDIO_PATH=${AUDIO_PATH}
+    volumes:
+      - "./data:/backend/data"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl","-f","http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
