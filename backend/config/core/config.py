@@ -1,4 +1,5 @@
 import os
+import typing
 from dotenv import load_dotenv
 import uuid
 import shutil
@@ -18,7 +19,7 @@ class TempVideoManager:
     def __init__(self, temp_video_path: str):
 
         self._saved_path = self._generate_file_name()
-        self._source_file = temp_video_path
+        self._source_file:typing.BinaryIO = temp_video_path
 
     def __enter__(self):
 
@@ -40,4 +41,5 @@ class TempVideoManager:
     def _generate_file_name(self):
         unique_id = str(uuid.uuid4())
         file_path = os.path.abspath(f"data/raw_videos/{unique_id}.mp4")
+        os.makedirs(os.path.dirname(file_path),exist_ok=True)
         return file_path
