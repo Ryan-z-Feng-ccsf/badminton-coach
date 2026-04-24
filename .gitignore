@@ -19,3 +19,13 @@ backend/data/audio/*
 
 # Keep the .gitkeep
 !backend/data/audio/.gitkeep
+
+# Ignore the rendering module
+backend/scripts
+
+# Ignore the videos used to test
+backend/data/test_clear_trim.mp4
+backend/data/test_clear_trim2.mp4
+backend/data/test_clear_trim3.mp4
+backend/data/test_clear.mp4
+backend/data/right_wrist_coordinates.csv
