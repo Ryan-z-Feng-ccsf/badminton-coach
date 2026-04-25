@@ -18,7 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     libxcb1 \
-    tk \  
+    libgles2 \
+    libegl1 \
+    libtk8.6 \ 
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder (keeps final image small)

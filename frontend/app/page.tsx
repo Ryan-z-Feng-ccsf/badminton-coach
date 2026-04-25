@@ -8,6 +8,80 @@ interface CoachFeedback {
   power_technique: string;
 }
 
+// 1. 定义多语言字典
+const i18n = {
+  en: {
+    title: "Badminton AI - Video",
+    placeholder: "Select a technique",
+    dragDrop: "Drag & drop video here",
+    clickBrowse: "or click to browse",
+    dropUpload: "Drop to upload!",
+    btnUpload: "Upload & Analyze",
+    btnUploading: "Uploading...",
+    analyzing: "🏸 Analyzing, please wait...",
+    errorReq: "❌ Network Request Error, please try again",
+    alertFile: "Please select a video file first",
+    alertAction: "Please select a technique first", 
+    alertErr: "There is an unexpected error",
+    modalTitle: "AI Coach Analysis",
+    issue: "Biomechanical Issue",
+    plan: "Action Plan",
+    power: "Power Generation",
+    export: "Export Report",
+    gotIt: "Got it, Coach!",
+    unknown: "Unknown Technique",
+    techs: {
+      high_clear: "High Clear",
+      smash: "Smash ➔",
+      smash_standard: "Standard Smash",
+      smash_stick: "Stick Smash",
+      smash_jump: "Jump Smash",
+      smash_slice: "Slice Smash",
+      half_smash: "Half Smash",
+      drop_shot: "Drop Shot ➔",
+      drop_slice: "Slice Drop",
+      drop_reverse_slice: "Reverse Slice Drop",
+      net_shot: "Net Shot",
+      net_spin: "Net Spin",
+    }
+  },
+  zh: {
+    title: "羽毛球 AI 教练",
+    placeholder: "请选择技术动作",
+    dragDrop: "拖拽视频到此处",
+    clickBrowse: "或点击浏览文件",
+    dropUpload: "松开鼠标完成上传！",
+    btnUpload: "上传并分析",
+    btnUploading: "上传中...",
+    analyzing: "🏸 正在分析，请稍候...",
+    errorReq: "❌ 网络请求错误，请重试",
+    alertFile: "请先选择一个视频文件",
+    alertAction: "请先选择一个技术动作", 
+    alertErr: "发生未知错误",
+    modalTitle: "AI 教练分析报告",
+    issue: "动作诊断",
+    plan: "改进方案",
+    power: "发力技巧",
+    export: "导出报告",
+    gotIt: "明白，教练！",
+    unknown: "未知动作",
+    techs: {
+      high_clear: "高远球",
+      smash: "杀球 ➔",
+      smash_standard: "重杀",
+      smash_stick: "点杀",
+      smash_jump: "跳杀",
+      smash_slice: "劈杀",
+      half_smash: "突击半场",
+      drop_shot: "吊球 ➔",
+      drop_slice: "劈吊",
+      drop_reverse_slice: "滑板吊球",
+      net_shot: "放网",
+      net_spin: "搓球",
+    }
+  }
+};
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [action, setAction] = useState<string>("");
@@ -16,33 +90,37 @@ export default function Home() {
   const [feedback, setFeedback] = useState<CoachFeedback | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showModal, setShowModal] = useState(false);
-  
-  // 新增：用于关联点击上传的文件输入框
+
+  // 2. 新增语言状态，默认英文
+  const [lang, setLang] = useState<'en' | 'zh'>('en');
+  const t = i18n[lang]; // 当前语言包
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 动作列表：label 使用动态字典映射
   const techniques = [
-    { id: 'high_clear', label: 'High Clear' },
+    { id: 'high_clear', label: t.techs.high_clear },
     {
       id: 'smash',
-      label: 'Smash ➔',
+      label: t.techs.smash,
       children: [
-        { id: 'smash_standard', label: 'Standard Smash' },
-        { id: 'smash_stick', label: 'Stick Smash' },
-        { id: 'smash_jump', label: 'Jump Smash' },
-        { id: 'smash_slice', label: 'Slice Smash' },
+        { id: 'smash_standard', label: t.techs.smash_standard },
+        { id: 'smash_stick', label: t.techs.smash_stick },
+        { id: 'smash_jump', label: t.techs.smash_jump },
+        { id: 'smash_slice', label: t.techs.smash_slice },
       ]
     },
-    { id: 'half_smash', label: 'Half Smash' },
+    { id: 'half_smash', label: t.techs.half_smash },
     {
       id: 'drop_shot',
-      label: 'Drop Shot ➔',
+      label: t.techs.drop_shot,
       children: [
-        { id: 'drop_slice', label: 'Slice Drop' },
-        { id: 'drop_reverse_slice', label: 'Reverse Slice Drop' },
+        { id: 'drop_slice', label: t.techs.drop_slice },
+        { id: 'drop_reverse_slice', label: t.techs.drop_reverse_slice },
       ]
     },
-    { id: 'net_shot', label: 'Net Shot' },
-    { id: 'net_spin', label: 'Net Spin' },
+    { id: 'net_shot', label: t.techs.net_shot },
+    { id: 'net_spin', label: t.techs.net_spin },
   ];
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -63,7 +141,6 @@ export default function Home() {
     }
   }
 
-  // 新增：处理常规点击选择文件
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
@@ -72,19 +149,23 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!action) {
+      alert(t.alertAction);
+      return;
+    }
     if (!file) {
-      alert("Please select a video file first");
+      alert(t.alertFile);
       return;
     }
 
     const formData = new FormData();
     formData.append("action", action);
     formData.append("video", file);
+    formData.append("language", lang); // 核心：把语言传给后端，让 LLM 知道用什么语言回复
 
-    // 重置状态
     setError(false);
     setLoading(true);
-    setFeedback(null); // 清除旧反馈
+    setFeedback(null);
 
     try {
       const response = await fetch(
@@ -94,34 +175,75 @@ export default function Home() {
           body: formData
         }
       );
-      
-      const result = await response.json();
-      console.log("Result from the backend", result);
 
-      // 修复：移除冗余的嵌套 if
+      const result = await response.json();
+
       if (result.status === 'processed') {
         setFeedback(result.llm_feedback);
         setLoading(false);
-        setFile(null); 
-        setShowModal(true); 
+        setFile(null);
+        setShowModal(true);
       }
     } catch (error) {
-      console.log("Network request failed", error);
+      console.error(error);
       setError(true);
       setLoading(false);
-      alert('There is an unexpected error');
+      alert(t.alertErr);
     }
   }
 
+  const handleExport = () => {
+    if (!feedback) return;
+
+    const techniqueName = techniques.flatMap(item => item.children ? item.children : item).find(item => item.id === action)?.label || t.unknown;
+    const date = new Date().toLocaleDateString();
+
+    const content = `🏸 ${t.modalTitle} 🏸\n\n` +
+      `Date: ${date}\n` +
+      `Technique Analyzed: ${techniqueName}\n` +
+      `----------------------------------------\n\n` +
+      `[${t.issue}]\n${feedback.problem}\n\n` +
+      `[${t.plan}]\n${feedback.improvement}\n\n` +
+      `[${t.power}]\n${feedback.power_technique}\n`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Badminton_Analysis_${Date.now()}.txt`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <main className='min-h-screen p-8 flex flex-col items-center justify-center bg-gray-50'>
-      <h1 className='text-3xl font-bold mb-8 text-center text-gray-800'>Badminton AI - Video</h1>
+    <main className='relative min-h-screen p-8 flex flex-col items-center justify-center bg-gray-50'>
+
+      {/* 右上角语言切换器 */}
+      <div className="absolute top-6 right-6 flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+        <button
+          onClick={() => setLang('en')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${lang === 'en' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          EN
+        </button>
+        <button
+          onClick={() => setLang('zh')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${lang === 'zh' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          中文
+        </button>
+      </div>
+
+      <h1 className='text-3xl font-bold mb-8 text-center text-gray-800'>{t.title}</h1>
+
       <form onSubmit={handleSubmit} className='flex flex-col gap-6 w-full max-w-md bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
 
-        {/* 下拉菜单 */}
         <div className="relative group">
           <div className='border border-gray-300 rounded-lg p-3 bg-white text-gray-700 cursor-default flex justify-between items-center group-hover:ring-2 group-hover:ring-blue-500 transition-all'>
-            <span>{techniques.flatMap(t => t.children ? t.children : t).find(t => t.id === action)?.label || 'Select a technique'}</span>
+            <span>{techniques.flatMap(item => item.children ? item.children : item).find(item => item.id === action)?.label || t.placeholder}</span>
             <span className="text-gray-400 text-xs">▼</span>
           </div>
 
@@ -151,12 +273,11 @@ export default function Home() {
           </ul>
         </div>
 
-        {/* 拖拽/点击上传区域 */}
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()} // 新增：点击触发文件选择
+          onClick={() => fileInputRef.current?.click()}
           className={`
             border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer
             ${isDragging
@@ -164,13 +285,12 @@ export default function Home() {
               : 'border-gray-300 bg-gray-50 hover:border-blue-400'}
           `}
         >
-          {/* 隐藏的文件输入框 */}
-          <input 
-            type="file" 
-            accept="video/*" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleFileSelect} 
+          <input
+            type="file"
+            accept="video/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
           />
 
           {file ? (
@@ -179,26 +299,24 @@ export default function Home() {
             </p>
           ) : (
             <div className={isDragging ? "text-red-500 font-bold" : "text-gray-500"}>
-              <p className="text-lg">{isDragging ? "Drop to upload!" : "Drag & drop video here"}</p>
-              <p className="text-sm mt-1 opacity-70">or click to browse</p>
+              <p className="text-lg">{isDragging ? t.dropUpload : t.dragDrop}</p>
+              <p className="text-sm mt-1 opacity-70">{t.clickBrowse}</p>
             </div>
           )}
         </div>
 
-        <button 
-          type='submit' 
+        <button
+          type='submit'
           disabled={isLoading}
-          className={`text-white p-3 rounded-lg font-bold transition-all shadow-md active:scale-[0.98] ${
-            isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+          className={`text-white p-3 rounded-lg font-bold transition-all shadow-md active:scale-[0.98] ${isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
         >
-          {isLoading ? 'Uploading...' : 'Upload & Analyze'}
+          {isLoading ? t.btnUploading : t.btnUpload}
         </button>
 
-        {/* 加载动画 */}
         {isLoading && (
           <div className="flex flex-col items-center gap-3 py-2">
-            <span className="text-gray-600 font-medium text-sm">🏸 Analyzing, please wait...</span>
+            <span className="text-gray-600 font-medium text-sm">{t.analyzing}</span>
             <svg viewBox="0 0 100 100" className="w-16 h-16">
               <style>
                 {`
@@ -232,12 +350,11 @@ export default function Home() {
 
         {hasError && (
           <div className='p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center text-sm'>
-            ❌ Network Request Error, please try again
+            {t.errorReq}
           </div>
         )}
       </form>
 
-      {/* 模态框 (Modal) */}
       {showModal && feedback && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div
@@ -248,7 +365,7 @@ export default function Home() {
           <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in duration-300">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <span className="text-2xl">🏸</span> AI Coach Analysis
+                <span className="text-2xl">🏸</span> {t.modalTitle}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -261,43 +378,81 @@ export default function Home() {
             </div>
 
             <div className="p-6 space-y-8">
+              <div className="p-6 space-y-8">
+              {/* 1. Problem - 带有警告图标 */}
               <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-red-500 rounded-full" />
-                  <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Biomechanical Issue</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">{t.issue}</h3>
                 </div>
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-gray-800 leading-relaxed">
+                <div className="bg-red-50 border border-red-100 rounded-xl p-5 text-gray-800 leading-relaxed shadow-sm">
                   {feedback.problem}
                 </div>
               </section>
 
+              {/* 2. Improvement - 带有任务清单图标 */}
               <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-blue-500 rounded-full" />
-                  <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Action Plan</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">{t.plan}</h3>
                 </div>
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-gray-800 leading-relaxed">
-                  {feedback.improvement}
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 text-gray-800 leading-relaxed shadow-sm">
+                  {/* 兼容数组或字符串的渲染方式 */}
+                  {Array.isArray(feedback.improvement) ? (
+                    <ul className="space-y-3">
+                      {feedback.improvement.map((step, index) => (
+                        <li key={index} className="flex gap-3">
+                          <span className="font-bold text-blue-600 select-none">{index + 1}.</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{feedback.improvement}</p>
+                  )}
                 </div>
               </section>
 
+              {/* 3. Power Technique - 带有闪电图标 */}
               <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-amber-500 rounded-full" />
-                  <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Power Generation</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">{t.power}</h3>
                 </div>
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-gray-800 leading-relaxed italic shadow-sm">
-                  “{feedback.power_technique}”
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-5 text-gray-800 leading-relaxed shadow-sm">
+                  {feedback.power_technique}
                 </div>
               </section>
             </div>
+            </div>
 
-            <div className="p-6 border-t border-gray-50 text-right">
+            <div className="p-6 border-t border-gray-50 flex justify-end gap-3 bg-gray-50/50">
+              <button
+                onClick={handleExport}
+                className="bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-lg font-medium hover:bg-gray-50 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                {t.export}
+              </button>
               <button
                 onClick={() => setShowModal(false)}
-                className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-all active:scale-95"
+                className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-all active:scale-95 shadow-sm"
               >
-                Got it, Coach!
+                {t.gotIt}
               </button>
             </div>
           </div>
