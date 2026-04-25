@@ -11,6 +11,16 @@ FROM python:3.11.9-slim
 
 WORKDIR /backend
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libxcb1 \
+    tk \  
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy installed packages from builder (keeps final image small)
 COPY  --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
