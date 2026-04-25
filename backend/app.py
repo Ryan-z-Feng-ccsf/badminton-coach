@@ -1,4 +1,3 @@
-from email.policy import default
 
 from config.core.config import TempVideoManager
 from pipeline import format_report
@@ -7,14 +6,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
 from src.llm.manager import LLMManager
 from src.llm.prompt_builder import build_prompt
+import os
+from dotenv import load_dotenv
 
-
+load_dotenv()
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000"
-    ]
+
+origins = os.getenv("ALLOWED_ORIGINS","http://localhost:3000", 
+    "http://127.0.0.1:3000").split(',')
+
 
 app.add_middleware(
     CORSMiddleware,
