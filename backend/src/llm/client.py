@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from http import client
+from turtle import st
 from google import genai
 from google.genai import types
 
@@ -20,13 +21,13 @@ load_dotenv()
 
 class CoachFeedback(BaseModel):
     problem: str = Field(
-        description="The core biomechanical issue in the user's badminton swing."
+        description="Describe the core biomechanical issue in a short, clear paragraph. DO NOT use markdown, bullet points, or bold text."
     )
-    improvement: str = Field(
-        description="Step-by-step actionable advice to fix the issue."
+    improvement: list[str] = Field(
+        description="Provide a step-by-step action plan to fix the issue. Return as a list of independent, concise steps. DO NOT use numbered lists, bullet points, or markdown formatting."
     )
     power_technique: str = Field(
-        description="Specific tips on how to generate explosive power from the correct joints."
+        description="Specific tips on generating explosive power. Write as a direct statement. DO NOT wrap the text in quotation marks. DO NOT use markdown."
     )
 
 
@@ -56,7 +57,8 @@ class GeminiClient(BaseLLMClient):
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json", 
-                response_schema=CoachFeedback
+                response_schema=CoachFeedback,
+                temperature = 0.3
             ),
         )
         return response.text

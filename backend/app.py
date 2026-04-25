@@ -1,3 +1,5 @@
+from email.policy import default
+
 from config.core.config import TempVideoManager
 from pipeline import format_report
 from fastapi import FastAPI, UploadFile, File, Form
@@ -25,10 +27,13 @@ app.add_middleware(
 
 @app.post("/upload-video")
 async def upload_video(
+    # Define language
+    language: str = Form(default = 'en'),
     # Define video parameters
     video: UploadFile = File(),
     # Define action
     action: str = Form(),
+    
 ) -> dict:
     # -- Block 1 -- CV Layer
     try:       
@@ -37,7 +42,7 @@ async def upload_video(
         with TempVideoManager(video.file) as temp_video_path:
             report = format_report(temp_video_path)
             print(report)
-            prompt = build_prompt(report=report, action=action)
+            prompt = build_prompt(report=report, action=action,language = language)
     except Exception as e:
         # This instantly triggers React's catch block
         print(f"CV Layer Error {e}")
