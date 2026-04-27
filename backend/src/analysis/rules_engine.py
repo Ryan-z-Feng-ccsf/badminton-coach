@@ -1,6 +1,6 @@
 from typing import Dict, Any
 import numpy as np
-
+import math
 """
 input:
 metadata=
@@ -109,6 +109,7 @@ class TechniqueRulesLayer:
         self._impact_frame = impact_frame
         self._window_frame = int(round(fps * lock_seconds))
         self._arm_extension_length = arm_extension_length
+        self._IMPACT_TOLERANCE :int = math.ceil(10 / 1000 * fps)
 
     def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
@@ -151,8 +152,9 @@ class TechniqueRulesLayer:
             np.argmax(elbow_slice)) + start_frame  # Find the index of the peak velocity for the elbow
         idx_wrist_peak = int(
             np.argmax(wrist_slice)) + start_frame  # Find the index of the peak velocity for the wrist
-        if idx_shoulder_peak <= idx_elbow_peak <= idx_wrist_peak:
+        if (idx_shoulder_peak - self._IMPACT_TOLERANCE) <= idx_elbow_peak and (idx_elbow_peak - self._IMPACT_TOLERANCE) <= idx_wrist_peak:
             return {
+                "impact_tolerance": self._IMPACT_TOLERANCE,
                 "issue": "Kinetic chain is functioning properly",
                 "is_proper": True,
                 "idx_shoulder_peak": idx_shoulder_peak,
@@ -161,6 +163,7 @@ class TechniqueRulesLayer:
             }
         else:
             return {
+                "impact_tolerance": self._IMPACT_TOLERANCE,
                 "issue": "Kinetic chain is not functioning properly",
                 "is_proper": False,
                 "idx_shoulder_peak": idx_shoulder_peak,
