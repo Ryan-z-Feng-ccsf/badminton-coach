@@ -94,7 +94,7 @@ class TechniqueRulesLayer:
     """Layer 2: Technique-Specific Rules"""
 
     def __init__(self, impact_threshold: float, arm_extension_length: float, fps: float, impact_frame: float,
-                 lock_seconds: float = 0.4):
+                 lock_seconds: float = 0.1):
 
         # lock_seconds: the swing from start to finish
 
