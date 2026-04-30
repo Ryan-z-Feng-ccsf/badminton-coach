@@ -1,5 +1,5 @@
 from src.cv.pose_detector import DetectorEngine
-from src.analysis.rules_engine import DiagnosisEngine
+from src.analysis.rules_dominant import DiagnosisEngine
 from src.analysis.sensor_fusion import SensorFusion
 from utils import extract
 from utils.extract import VelocityMetrics, Metrics
