@@ -40,7 +40,8 @@ class DominantArmRules(AbstractRuleLayer):
                  arm_extension_length: float, 
                  fps: float, 
                  impact_frame: float,
-                 lock_seconds: float = 0.1):
+                 lock_seconds: float = 0.1
+                 ):
 
         # lock_seconds: the swing from start to finish
 
@@ -138,13 +139,13 @@ class DominantArmRules(AbstractRuleLayer):
                 return {
                     "issue": message,
                     "is_optimal": is_optimal,
-                    "impact_height": self._arm_extension_length,
+                    "arm_extension": self._arm_extension_length,
                     "threshold": self._HITTING_HEIGHT_THRESHOLD
                 }
         return {
             "issue": "Impact point evaluation failed, height ratio out of expected range",
             "is_optimal": None,
-            "impact_height": self._arm_extension_length,
+            "arm_extension": self._arm_extension_length,
             "threshold": self._HITTING_HEIGHT_THRESHOLD
         }
 
