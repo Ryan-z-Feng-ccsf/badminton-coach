@@ -33,7 +33,7 @@ def calculate_smoothed_vel(
         np.ndarray: The smoothed derivative array (representing 1D velocity).
     """
     delta = 1 / fps
-    return savgol_filter(coordinates, window_length, polyorder, deriv, delta)
+    return savgol_filter(coordinates, window_length, polyorder, deriv, delta) # pyright: ignore[reportReturnType]
 
 if __name__ == "__main__":
     sample_data=[

@@ -141,7 +141,7 @@ class VelocityMetrics:
         vx = calculate_smoothed_vel(joint_positions_x, fps)
         vy = calculate_smoothed_vel(joint_positions_y, fps)
         vz = calculate_smoothed_vel(joint_positions_z, fps)
-        velocities: list = calculate_joint_velocity(vx, vy, vz)
+        velocities: list = calculate_joint_velocity(vx, vy, vz) # pyright: ignore[reportArgumentType]
 
         return velocities
 

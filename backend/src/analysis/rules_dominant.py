@@ -1,6 +1,7 @@
 from typing import Dict, Any
 import numpy as np
 import math
+from rules_safety import AbstractRuleLayer
 """
 input:
 metadata=
@@ -33,67 +34,12 @@ output:
 
 """
 
-
-class SafetyRulesLayer:
-    """Layer 1: Universal Safety Rules"""
-
-    def __init__(self):
-        self._ELBOW_ANGLE_THRESHOLD = 175.0  # Example threshold for elbow angle
-        self._SHOULDER_ANGLE_THRESHOLD = 100.0  # Example threshold for shoulder angle
-
-    def check_elbow_hyperextension(self, elbow_angle_max: float) -> Dict[str, Any]:
-        """
-        Check if the elbow angle exceeds the hyperextension threshold.
-        param elbow_angle: The calculated angle of the elbow joint in degrees
-        return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
-        """
-        if elbow_angle_max > self._ELBOW_ANGLE_THRESHOLD:
-            return {
-                "issue": "Elbow Hyperextension Risk",
-                "is_safe": False,
-                "max_elbow_angle": elbow_angle_max
-            }
-        if np.isnan(elbow_angle_max):
-            return {
-                "issue": "Joint overlap, unable to calculate elbow angle",
-                "is_safe": False,
-                "max_elbow_angle": None
-            }
-        return {
-            "issue": "Elbow angle is within safe limits",
-            "is_safe": True,
-            "max_elbow_angle": elbow_angle_max
-        }
-
-    def check_shoulder_impingement(self, shoulder_angle_max: float) -> Dict[str, Any]:
-        """
-        Check if the shoulder angle exceeds the impingement risk threshold.
-        param shoulder_angle: The calculated angle of the shoulder joint in degrees
-        return: A dictionary containing the diagnosis result, including whether it's safe and any relevant details.
-        """
-        if shoulder_angle_max > self._SHOULDER_ANGLE_THRESHOLD:
-            return {
-                "issue": "Shoulder Impingement Risk",
-                "is_safe": False,
-                "max_shoulder_angle": shoulder_angle_max
-            }
-        if np.isnan(shoulder_angle_max):
-            return {
-                "issue": "Joint overlap, unable to calculate shoulder angle",
-                "is_safe": False,
-                "max_shoulder_angle": None
-            }
-        return {
-            "issue": "Shoulder angle is within safe limits",
-            "is_safe": True,
-            "max_shoulder_angle": shoulder_angle_max
-        }
-
-
-class TechniqueRulesLayer:
-    """Layer 2: Technique-Specific Rules"""
-
-    def __init__(self, impact_threshold: float, arm_extension_length: float, fps: float, impact_frame: float,
+class DominantArmRules(AbstractRuleLayer):
+    def __init__(self, 
+                 impact_threshold: float, 
+                 arm_extension_length: float, 
+                 fps: float, 
+                 impact_frame: float,
                  lock_seconds: float = 0.1):
 
         # lock_seconds: the swing from start to finish
@@ -110,8 +56,17 @@ class TechniqueRulesLayer:
         self._window_frame = int(round(fps * lock_seconds))
         self._arm_extension_length = arm_extension_length
         self._IMPACT_TOLERANCE :int = math.ceil(10 / 1000 * fps)
-
-    def check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
+    def evaluate(self,extract_joint_list:dict) -> Dict:
+        return{
+            'kinetic_chain':self._check_kinetic_chain(
+                extract_joint_list['right_shoulder_velocity'],
+                extract_joint_list['right_elbow_velocity'],
+                extract_joint_list['right_wrist_velocity']
+                ),
+            'arm_extension':self._evaluate_arm_extension_length()
+        }
+    
+    def _check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
                             smoothed_right_wrist_velocity: list[float]) -> Dict[str, Any]:
         """
@@ -171,7 +126,7 @@ class TechniqueRulesLayer:
                 "idx_wrist_peak": idx_wrist_peak
             }
 
-    def evaluate_arm_extension_length(self) -> Dict[str, Any]:
+    def _evaluate_arm_extension_length(self) -> Dict[str, Any]:
         """
         Evaluate the impact point of the ball based on the height of the impact.
         param impact_height: The height of the impact point in meters
@@ -193,42 +148,6 @@ class TechniqueRulesLayer:
             "threshold": self._HITTING_HEIGHT_THRESHOLD
         }
 
-class DiagnosisEngine:
-    """Layer 3: Main Diagnosis Engine"""
-
-    def __init__(self, impact_threshold, arm_extension_length: float, fps:float,  impact_frame: float,):
-        self._safety_rules_layer = SafetyRulesLayer()
-        self._technique_rules_layer = TechniqueRulesLayer(impact_threshold, arm_extension_length, fps, impact_frame)
-
-    def analyze_stroke(self, smoothed_right_shoulder_velocity: list[float],
-                       smoothed_right_elbow_velocity: list[float],
-                       smoothed_right_wrist_velocity: list[float],
-                       right_shoulder_angle: list[float], right_elbow_angle: list[float],
-                       ) -> Dict[str, Any]:
-        """
-        smoothed_right_shoulder_velocity: A list of smoothed velocities for the right shoulder joint across frames
-        smoothed_right_elbow_velocity: A list of smoothed velocities for the right elbow joint across frames
-        smoothed_right_wrist_velocity: A list of smoothed velocities for the right wrist joint across frames
-        right_elbow_angle: A list of calculated angles for the right elbow joint across frames
-        right_shoulder_angle: A list of calculated angles for the right shoulder joint across frames
-        impact_height: The height of the impact point in meters
-        return: A dictionary containing the diagnosis report, including safety and technique assessments.
-        """
-
-        report_result: Dict[str, Any] = {}
-        elbow_hyperextension_result = self._safety_rules_layer.check_elbow_hyperextension(max(right_elbow_angle))
-        shoulder_impingement_result = self._safety_rules_layer.check_shoulder_impingement(max(right_shoulder_angle))
-        report_result["safety_report"] = {
-            "elbow_hyperextension": elbow_hyperextension_result,
-            "shoulder_impingement": shoulder_impingement_result
-        }
-
-        report_result["technique_report"] = {
-            "kinetic_chain": self._technique_rules_layer.check_kinetic_chain(smoothed_right_shoulder_velocity,
-                                                                             smoothed_right_elbow_velocity,
-                                                                             smoothed_right_wrist_velocity),
-            "impact_point": self._technique_rules_layer.evaluate_arm_extension_length()}
-        return report_result
 
 
 if __name__ == "__main__":
