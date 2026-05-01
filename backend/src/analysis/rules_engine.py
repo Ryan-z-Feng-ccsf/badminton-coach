@@ -21,7 +21,8 @@ class DiagnosisEngine:
 
         self._THRESHOLD = {
             "right_elbow_max": 175.0, 
-            "right_shoulder_max": 100.0
+            "right_shoulder_max": 100.0,
+            'right_knee_min': 90.0
             }
 
     def analyze_stroke(self, extract_joint_list: dict) -> dict:
@@ -38,6 +39,11 @@ class DiagnosisEngine:
             extract_joint_list,
             self._THRESHOLD['right_elbow_max']
             
+        )
+        report_result['safety_report']['knee_hyperflexion']=self._safe_center.check_min_flexion(
+            'right_knee_angle',
+            extract_joint_list,
+            self._THRESHOLD['right_knee_min']
         )
         for rule in self._rules:
             rule_key = rule.__class__.__name__

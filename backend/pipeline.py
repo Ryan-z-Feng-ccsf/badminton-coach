@@ -21,6 +21,9 @@ def format_report(video_path:str) -> dict:
     impact_frame = sensor_fusion.detect_impact_multimodel(visual_impact)
     # Extract metrics
     metrics = Metrics(impact_frame)
+    # TODO:
+    # add the right knee angle and right ankle angle
+    # add the [26] [28] in the detector
     extract_metrics = metrics.extract_metrics(extract.extract_body_parts(pose_data_payload, 'right_shoulder'),
                                               extract.extract_body_parts(pose_data_payload, 'right_elbow'),
                                               extract.extract_body_parts(pose_data_payload, 'right_wrist'),

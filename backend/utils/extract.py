@@ -156,6 +156,8 @@ class Metrics:
             right_elbow: np.ndarray,
             right_wrist: np.ndarray,
             right_hip: np.ndarray,
+            right_knee: np.ndarray,
+            right_ankle: np.ndarray,
             pose_data: dict,
             fps: float
     )->dict:
@@ -163,6 +165,7 @@ class Metrics:
         arm_extension_length = self._impact_metrics.extract_arm_extension_length(right_shoulder, right_wrist)
         elbow_angle = self._angle_metrics.extract_b_joint_angle(right_wrist, right_elbow, right_shoulder)
         shoulder_angle = self._angle_metrics.extract_b_joint_angle(right_elbow, right_shoulder, right_hip)
+        right_knee_angle = self._angle_metrics.extract_b_joint_angle(right_hip,right_knee,right_ankle)
         shoulder_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_shoulder', fps)
         elbow_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_elbow', fps)
         wrist_vel = self._velocity_metrics.extract_joint_velocity(pose_data, 'right_wrist', fps)
@@ -171,6 +174,7 @@ class Metrics:
             'arm_extension_length': arm_extension_length,
             'right_elbow_angle': elbow_angle,
             'right_shoulder_angle': shoulder_angle,
+            'right_knee_angle': right_knee_angle,
             'right_shoulder_velocity': shoulder_vel,
             'right_elbow_velocity': elbow_vel,
             'right_wrist_velocity': wrist_vel
