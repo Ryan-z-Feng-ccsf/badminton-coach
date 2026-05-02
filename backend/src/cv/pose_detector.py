@@ -101,7 +101,9 @@ class PoseDetector:
                     "right_shoulder": self._get_pt(landmarks[12]),
                     "right_elbow": self._get_pt(landmarks[14]),
                     "right_wrist": self._get_pt(landmarks[16]),
-                    "right_hip": self._get_pt(landmarks[24])
+                    "right_hip": self._get_pt(landmarks[24]),
+                    'right_knee':self._get_pt(landmarks[26]),
+                    'right_ankle':self._get_pt(landmarks[28])
                 }
             }
         else:
