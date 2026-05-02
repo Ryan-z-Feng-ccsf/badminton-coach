@@ -7,7 +7,9 @@ class LowerBodyRules(AbstractRuleLayer):
         
         
     def evaluate(self) -> dict:
-        pass
+        return {
+            
+        }
     
 
         

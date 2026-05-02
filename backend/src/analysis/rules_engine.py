@@ -1,5 +1,5 @@
-from rules_safety import AbstractRuleLayer,SafetyRulesCenter
-from rules_dominant import DominantArmRules
+from src.analysis.rules_safety import AbstractRuleLayer,SafetyRulesCenter
+from src.analysis.rules_dominant import DominantArmRules
 
 class DiagnosisEngine:
     def __init__(self,

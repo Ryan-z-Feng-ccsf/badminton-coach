@@ -11,13 +11,17 @@ metadata={
         "right_shoulder":[x,y,z],
         "right_elbow":[x,y,z],
         "right_wrist":[x,y,z],
-        "right_hip":[x,y,z]
+        "right_hip":[x,y,z],
+        'right_knee':[x,y,z],
+        'right_ankle':[x,y,z]
     },
     1: {
         "right_shoulder":[x,y,z],
         "right_elbow":[x,y,z],
         "right_wrist":[x,y,z],
-        "right_hip":[x,y,z]
+        "right_hip":[x,y,z],
+        'right_knee':[x,y,z],
+        'right_ankle':[x,y,z]
     },
     ...,
     }

@@ -1,5 +1,5 @@
 from src.cv.pose_detector import DetectorEngine
-from src.analysis.rules_dominant import DiagnosisEngine
+from src.analysis.rules_engine import DiagnosisEngine
 from src.analysis.sensor_fusion import SensorFusion
 from utils import extract
 from utils.extract import VelocityMetrics, Metrics
@@ -27,6 +27,8 @@ def format_report(video_path:str) -> dict:
                                               extract.extract_body_parts(pose_data_payload, 'right_elbow'),
                                               extract.extract_body_parts(pose_data_payload, 'right_wrist'),
                                               extract.extract_body_parts(pose_data_payload, 'right_hip'),
+                                              extract.extract_body_parts(pose_data_payload, 'right_knee'),
+                                              extract.extract_body_parts(pose_data_payload, 'right_ankle'),
                                               pose_data_payload,
                                               fps
                                               )
@@ -37,11 +39,7 @@ def format_report(video_path:str) -> dict:
         fps,
         impact_frame
     )
-    report = diagnosis.analyze_stroke(extract_metrics['right_shoulder_velocity'],
-                                      extract_metrics['right_elbow_velocity'],
-                                      extract_metrics['right_wrist_velocity'],
-                                      extract_metrics['right_shoulder_angle'],
-                                      extract_metrics['right_elbow_angle'])
+    report = diagnosis.analyze_stroke(extract_metrics)
     return report
 
 if __name__ == "__main__":
