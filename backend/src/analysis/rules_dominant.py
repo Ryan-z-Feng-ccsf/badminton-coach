@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import numpy as np
 import math
-from rules_safety import AbstractRuleLayer
+from src.analysis.rules_safety import AbstractRuleLayer
 """
 input:
 metadata=
@@ -35,10 +35,10 @@ output:
 """
 
 class DominantArmRules(AbstractRuleLayer):
-    def __init__(self, 
-                 impact_threshold: float, 
-                 arm_extension_length: float, 
-                 fps: float, 
+    def __init__(self,
+                 impact_threshold: float,
+                 arm_extension_length: float,
+                 fps: float,
                  impact_frame: float,
                  lock_seconds: float = 0.1
                  ):
@@ -66,7 +66,7 @@ class DominantArmRules(AbstractRuleLayer):
                 ),
             'arm_extension':self._evaluate_arm_extension_length()
         }
-    
+
     def _check_kinetic_chain(self, smoothed_right_shoulder_velocity: list[float],
                             smoothed_right_elbow_velocity: list[float],
                             smoothed_right_wrist_velocity: list[float]) -> Dict[str, Any]:

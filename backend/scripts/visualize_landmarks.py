@@ -39,7 +39,7 @@ detector = vision.PoseLandmarker.create_from_options(options)
 pose_data_payload = {}
 frame_idx = 0
 # Open the webcam
-cap = cv2.VideoCapture("../data/raw_videos/test_clear_trim2.mp4")
+cap = cv2.VideoCapture("../data/raw_videos/test_clear_trim3.mp4")
 fps = cap.get(cv2.CAP_PROP_FPS)
 print(f"Frames per second: {fps}")
 while True:
