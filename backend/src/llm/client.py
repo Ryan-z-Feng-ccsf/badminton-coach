@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-from http import client
-from turtle import st
 from google import genai
 from google.genai import types
 
