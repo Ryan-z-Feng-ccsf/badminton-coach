@@ -62,27 +62,27 @@ class SafetyRulesCenter:
 
         Args:
             joint_name (str): _description_
-            curr_max_angle (float): _description_
+            curr_min_angle (float): _description_
             safe_threshold (float): _description_
 
         Returns:
             dict: _description_
         """
-        curr_max_angle: float = min(extract_joint_list[joint_name])
-        if np.isnan(curr_max_angle):
+        curr_min_angle: float = min(extract_joint_list[joint_name])
+        if np.isnan(curr_min_angle):
             return {
                 "issue": f"Joint overlap, unable to calculate {joint_name} angle",
                 "is_safe": None,
-                "max_elbow_angle": None,
+                "min_elbow_angle": None,
             }
-        if curr_max_angle > safe_threshold:
+        if curr_min_angle < safe_threshold:
             return {
-                "issue": f"{joint_name} Hyperextension/Impingement Risk",
+                "issue": f"{joint_name} Hyperflexion Risk",
                 "is_safe": False,
-                "max_angle": curr_max_angle,
+                "min_angle": curr_min_angle,
             }
         return {
             "issue": f"{joint_name} angle is within safe limits",
             "is_safe": True,
-            "max_angle": curr_max_angle,
+            "min_angle": curr_min_angle,
         }
