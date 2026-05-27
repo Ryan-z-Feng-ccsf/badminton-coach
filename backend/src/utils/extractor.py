@@ -10,11 +10,11 @@ load_dotenv()
 
 class PoseDetector:
     def __init__(
-        self,
-        model_path: str,
-        min_pose_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-        output_segmentation_masks=False,
+            self,
+            model_path: str,
+            min_pose_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+            output_segmentation_masks=False,
     ):
         """
         initialize the PoseLandmarker object
@@ -71,7 +71,7 @@ class PoseDetector:
         detection_result = self.detector.detect_for_video(
             mp_image, timestamp_ms=timestamp_ms
         )
-        result: dict
+        result: np.ndarray
         # ensure the detection result contains pose landmarks
         if detection_result.pose_landmarks:
             print("Pose landmarks detected")
@@ -91,19 +91,14 @@ class PoseDetector:
                 28,
             ]
             coords = np.array([self._get_pt(landmarks[i]) for i in target_indices])
-            
-            midpoint = coords[[4,5]].mean(axis=0)  # Midpoint between left hip and right hip
+
+            midpoint = coords[[4, 5]].mean(axis=0)  # Midpoint between left hip and right hip
             normalized_coords = coords - midpoint  # Center the coordinates around the midpoint
-            result = {
-                "is_valid": True,
-                "joints": normalized_coords
-            }
+            result = normalized_coords
         else:
             print("No pose landmarks detected")
-            result = {
-                "is_valid": False, 
-                "joints": np.zeros((10, 3))  # Return an array of zeros if no landmarks are detected
-                    }
+            result = np.zeros((10, 3))  # Return an array of zeros if no landmarks are detected
+
         return result
 
 

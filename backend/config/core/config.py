@@ -12,7 +12,8 @@ def get_path(path: str) -> str:
     raw_relative_path = os.environ[path]
     # get the absolute path of this python script directory
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.abspath(os.path.join(cur_dir, raw_relative_path))
+    project_root = os.path.dirname(os.path.join(cur_dir,"../../"))
+    return os.path.abspath(os.path.join(project_root, raw_relative_path))
 
 
 class TempVideoManager:
