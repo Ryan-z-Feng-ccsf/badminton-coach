@@ -2,11 +2,7 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from dotenv import load_dotenv
 import numpy as np
-
-load_dotenv()
-
 
 class PoseDetector:
     def __init__(

@@ -22,9 +22,20 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+import os
+import sys
 
-model_path = '../models/pose_landmarker_heavy.task'
-base_options = python.BaseOptions(model_asset_path=model_path)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.join(current_dir,"../"))
+sys.path.append(project_root)
+
+from config.core import config
+
+
+
+MODEL_PATH = config.get_path("POSE_MODEL_PATH")
+VIDEO_PATH = config.get_path("VIDEO_PATH")
+base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
 options = vision.PoseLandmarkerOptions(
     base_options=base_options,
     running_mode=vision.RunningMode.VIDEO,
@@ -39,7 +50,7 @@ detector = vision.PoseLandmarker.create_from_options(options)
 pose_data_payload = {}
 frame_idx = 0
 # Open the webcam
-cap = cv2.VideoCapture("../data/raw_videos/test_clear_trim3.mp4")
+cap = cv2.VideoCapture(VIDEO_PATH)
 fps = cap.get(cv2.CAP_PROP_FPS)
 print(f"Frames per second: {fps}")
 while True:
