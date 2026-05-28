@@ -4,6 +4,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import numpy as np
 
+
 class PoseDetector:
     def __init__(
             self,
@@ -86,11 +87,35 @@ class PoseDetector:
                 27,
                 28,
             ]
-            coords = np.array([self._get_pt(landmarks[i]) for i in target_indices])
+            # Mark
+            h, w, _ = frame_bgr.shape
+            aspect_ratio = w / h
+            for idx in target_indices:
+                cx = int(landmarks[idx].x*w)
+                cy = int(landmarks[idx].y*h)
+                cv2.circle(
+                    frame_bgr,
+                    (cx, cy),
+                    7,
+                    (255, 0, 0),
+                    -1
+                )
+
+            raw_coords = np.array([self._get_pt(landmarks[i]) for i in target_indices])
+
+            coords = raw_coords.copy()
+            coords[:, 0] = coords[:, 0] * aspect_ratio
 
             midpoint = coords[[4, 5]].mean(axis=0)  # Midpoint between left hip and right hip
             normalized_coords = coords - midpoint  # Center the coordinates around the midpoint
-            result = normalized_coords
+
+            shoulder_midpoint = coords[[0,1]].mean(axis=0) # Reduce the noise by averaging the left shoulder and right shoulder
+            torso_length = np.linalg.norm(shoulder_midpoint - midpoint)  # Calculate the torso length
+            if torso_length > 1e-6:
+                result = normalized_coords/torso_length
+            else:
+                result = normalized_coords
+
         else:
             print("No pose landmarks detected")
             result = np.zeros((10, 3))  # Return an array of zeros if no landmarks are detected

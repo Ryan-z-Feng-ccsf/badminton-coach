@@ -22,13 +22,6 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import os
-import sys
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(os.path.join(current_dir,"../"))
-sys.path.append(project_root)
-
 from config.core import config
 
 
